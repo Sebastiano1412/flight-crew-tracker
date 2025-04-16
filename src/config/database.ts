@@ -1,4 +1,3 @@
-import { DatabaseConfig } from '../config/database';
 
 export interface CallSign {
   id: string;
