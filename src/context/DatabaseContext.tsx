@@ -35,7 +35,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [database]);
 
   const login = (password: string): boolean => {
-    if (password === database.adminPassword) {
+    if (password === "asxeventi10") {
       setIsAdmin(true);
       toast.success("Admin login successful");
       return true;

@@ -17,7 +17,6 @@ export interface EventParticipation {
 }
 
 export interface DatabaseConfig {
-  adminPassword: string;
   callSigns: CallSign[];
   eventParticipations: EventParticipation[];
 }
@@ -29,7 +28,6 @@ const loadDatabase = (): DatabaseConfig => {
   }
   
   return {
-    adminPassword: "asxeventi10",
     callSigns: [
       { id: "1", code: "VA001", isActive: true },
       { id: "2", code: "VA002", isActive: true },
