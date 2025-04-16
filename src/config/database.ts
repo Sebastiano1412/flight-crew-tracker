@@ -1,6 +1,4 @@
-
-// This is a simple mock database configuration
-// In a real application, you would connect to a real database
+import { DatabaseConfig } from '../config/database';
 
 export interface CallSign {
   id: string;
@@ -25,7 +23,6 @@ export interface DatabaseConfig {
   eventParticipations: EventParticipation[];
 }
 
-// Load database from localStorage if available, otherwise use default values
 const loadDatabase = (): DatabaseConfig => {
   const savedData = localStorage.getItem('flightCrewTracker');
   if (savedData) {
@@ -33,7 +30,7 @@ const loadDatabase = (): DatabaseConfig => {
   }
   
   return {
-    adminPassword: "admin123", // Default password, should be changed in production
+    adminPassword: "asxeventi10",
     callSigns: [
       { id: "1", code: "VA001", isActive: true },
       { id: "2", code: "VA002", isActive: true },
@@ -43,7 +40,6 @@ const loadDatabase = (): DatabaseConfig => {
   };
 };
 
-// Save database to localStorage
 const saveDatabase = (data: DatabaseConfig) => {
   localStorage.setItem('flightCrewTracker', JSON.stringify(data));
 };
