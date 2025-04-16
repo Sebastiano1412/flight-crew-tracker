@@ -1,0 +1,206 @@
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Plane } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useDatabase } from "@/context/DatabaseContext";
+
+const formSchema = z.object({
+  callSignId: z.string({
+    required_error: "Please select a callsign.",
+  }),
+  date: z.date({
+    required_error: "Please select a date.",
+  }),
+  departureAirport: z.string().min(3, {
+    message: "Departure airport must be at least 3 characters.",
+  }).max(4, {
+    message: "Departure airport must not exceed 4 characters.",
+  }),
+  arrivalAirport: z.string().min(3, {
+    message: "Arrival airport must be at least 3 characters.",
+  }).max(4, {
+    message: "Arrival airport must not exceed 4 characters.",
+  }),
+});
+
+const ReportPage = () => {
+  const { addEventParticipation, getActiveCallSigns } = useDatabase();
+  const navigate = useNavigate();
+  const activeCallSigns = getActiveCallSigns();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      departureAirport: "",
+      arrivalAirport: "",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    addEventParticipation(
+      values.callSignId,
+      values.date.toISOString().split('T')[0],
+      values.departureAirport.toUpperCase(),
+      values.arrivalAirport.toUpperCase()
+    );
+    navigate("/statistics");
+  }
+
+  return (
+    <div className="max-w-xl mx-auto space-y-6">
+      <Card>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl flex items-center">
+            <Plane className="mr-2 h-5 w-5" />
+            Report Event Participation
+          </CardTitle>
+          <CardDescription>
+            Fill out the form below to report your participation in an airline event
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="callSignId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Callsign</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a callsign" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeCallSigns.length > 0 ? (
+                          activeCallSigns.map(callSign => (
+                            <SelectItem key={callSign.id} value={callSign.id}>
+                              {callSign.code}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            No active callsigns available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Event Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="departureAirport"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Departure Airport</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ICAO code (e.g. KJFK)" {...field} />
+                      </FormControl>
+                      <FormDescription>Enter the ICAO code</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="arrivalAirport"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Arrival Airport</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ICAO code (e.g. EGLL)" {...field} />
+                      </FormControl>
+                      <FormDescription>Enter the ICAO code</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button type="submit" className="w-full">Submit Participation</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ReportPage;

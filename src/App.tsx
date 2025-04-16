@@ -1,9 +1,20 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Layout from "./components/Layout";
+import { DatabaseProvider } from "./context/DatabaseContext";
+
+// Pages
+import Home from "./pages/Home";
+import ReportPage from "./pages/ReportPage";
+import StatisticsPage from "./pages/StatisticsPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import CallSignsPage from "./pages/admin/CallSignsPage";
+import ApprovalPage from "./pages/admin/ApprovalPage";
+import EventsPage from "./pages/admin/EventsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -11,15 +22,24 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <DatabaseProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/report" element={<ReportPage />} />
+              <Route path="/statistics" element={<StatisticsPage />} />
+              <Route path="/admin" element={<AdminLoginPage />} />
+              <Route path="/admin/callsigns" element={<CallSignsPage />} />
+              <Route path="/admin/approve" element={<ApprovalPage />} />
+              <Route path="/admin/events" element={<EventsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </DatabaseProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
