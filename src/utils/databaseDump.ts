@@ -40,7 +40,8 @@ export const databaseDump: DatabaseConfig = {
       isApproved: false,
       submittedAt: "2025-04-13T16:20:00Z"
     }
-  ]
+  ],
+  manualParticipationCounts: [] // Added missing property
 };
 
 // Function to import a database dump
@@ -62,7 +63,8 @@ export const exportCurrentDatabase = (): DatabaseConfig => {
 export const resetDatabase = () => {
   const emptyDatabase: DatabaseConfig = {
     callSigns: [],
-    eventParticipations: []
+    eventParticipations: [],
+    manualParticipationCounts: [] // Added missing property
   };
   db.save(emptyDatabase);
   console.log("Database has been reset.");
