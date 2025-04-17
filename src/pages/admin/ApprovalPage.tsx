@@ -24,11 +24,42 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useDatabase } from "@/context/DatabaseContext";
+import { useState } from "react";
+import MilestonePopup from "@/components/MilestonePopup";
 
 const ApprovalPage = () => {
-  const { isAdmin, getPendingParticipations, getCallSignCode, approveEventParticipation, deleteEventParticipation } = useDatabase();
+  const { isAdmin, getPendingParticipations, getCallSignCode, approveEventParticipation, deleteEventParticipation, getCallSignParticipationCount } = useDatabase();
+  const [milestoneDetails, setMilestoneDetails] = useState<{ callSign: string; milestone: number; open: boolean }>({
+    callSign: "",
+    milestone: 0,
+    open: false
+  });
 
   const pendingParticipations = getPendingParticipations();
+
+  const handleApprove = async (eventId: string, callSignId: string) => {
+    await approveEventParticipation(eventId);
+    
+    // Check if a milestone has been reached
+    const callSignCode = getCallSignCode(callSignId);
+    const participationCount = getCallSignParticipationCount(callSignId);
+    
+    // Check if the count is exactly one of the milestone values
+    const milestones = [20, 40, 60, 80, 100];
+    const reachedMilestone = milestones.find(m => participationCount === m);
+    
+    if (reachedMilestone) {
+      setMilestoneDetails({
+        callSign: callSignCode,
+        milestone: reachedMilestone,
+        open: true
+      });
+    }
+  };
+
+  const closeMilestonePopup = () => {
+    setMilestoneDetails(prev => ({ ...prev, open: false }));
+  };
 
   if (!isAdmin) {
     return <Navigate to="/admin" />;
@@ -103,7 +134,7 @@ const ApprovalPage = () => {
                             <AlertDialogCancel>Annulla</AlertDialogCancel>
                             <AlertDialogAction 
                               className="bg-green-600 text-white hover:bg-green-700"
-                              onClick={() => approveEventParticipation(event.id)}
+                              onClick={() => handleApprove(event.id, event.callSignId)}
                             >
                               Approva
                             </AlertDialogAction>
@@ -154,6 +185,14 @@ const ApprovalPage = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Milestone popup */}
+      <MilestonePopup 
+        callSign={milestoneDetails.callSign}
+        milestone={milestoneDetails.milestone}
+        open={milestoneDetails.open}
+        onClose={closeMilestonePopup}
+      />
     </div>
   );
 };
