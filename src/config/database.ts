@@ -16,15 +16,28 @@ export interface EventParticipation {
   approvedAt?: string;
 }
 
+export interface ManualParticipationCount {
+  id: string;
+  callSignId: string;
+  count: number;
+  updatedAt: string;
+}
+
 export interface DatabaseConfig {
   callSigns: CallSign[];
   eventParticipations: EventParticipation[];
+  manualParticipationCounts: ManualParticipationCount[];
 }
 
 const loadDatabase = (): DatabaseConfig => {
   const savedData = localStorage.getItem('flightCrewTracker');
   if (savedData) {
-    return JSON.parse(savedData);
+    // Handle upgrading database structure if manualParticipationCounts is missing
+    const parsedData = JSON.parse(savedData);
+    if (!parsedData.manualParticipationCounts) {
+      parsedData.manualParticipationCounts = [];
+    }
+    return parsedData;
   }
   
   return {
@@ -33,7 +46,8 @@ const loadDatabase = (): DatabaseConfig => {
       { id: "2", code: "VA002", isActive: true },
       { id: "3", code: "VA003", isActive: true },
     ],
-    eventParticipations: []
+    eventParticipations: [],
+    manualParticipationCounts: []
   };
 };
 

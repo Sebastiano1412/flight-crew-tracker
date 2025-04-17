@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Pencil, Trash2, Plus, Tag } from "lucide-react";
+import { Pencil, Trash2, Plus, Tag, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -51,23 +52,27 @@ import { useDatabase } from "@/context/DatabaseContext";
 
 const formSchema = z.object({
   code: z.string().min(3, {
-    message: "Callsign must be at least 3 characters.",
+    message: "Il callsign deve essere di almeno 3 caratteri.",
   }).max(8, {
-    message: "Callsign must not exceed 8 characters.",
+    message: "Il callsign non deve superare gli 8 caratteri.",
   }),
   isActive: z.boolean().default(true),
+  manualParticipationCount: z.coerce.number().int().min(0, {
+    message: "Il conteggio manuale deve essere un numero positivo.",
+  }).default(0),
 });
 
 const CallSignsPage = () => {
-  const { isAdmin, database, addCallSign, updateCallSign, deleteCallSign } = useDatabase();
+  const { isAdmin, database, addCallSign, updateCallSign, deleteCallSign, getManualParticipationCount, updateManualParticipationCount } = useDatabase();
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingCallSign, setEditingCallSign] = useState<{ id: string; code: string; isActive: boolean } | null>(null);
+  const [editingCallSign, setEditingCallSign] = useState<{ id: string; code: string; isActive: boolean; manualCount: number } | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: "",
       isActive: true,
+      manualParticipationCount: 0,
     },
   });
 
@@ -75,6 +80,7 @@ const CallSignsPage = () => {
     form.reset({
       code: "",
       isActive: true,
+      manualParticipationCount: 0,
     });
     setEditingCallSign(null);
   };
@@ -87,10 +93,15 @@ const CallSignsPage = () => {
   }
 
   const editCallSign = (callSign: { id: string; code: string; isActive: boolean }) => {
-    setEditingCallSign(callSign);
+    const manualCount = getManualParticipationCount(callSign.id);
+    setEditingCallSign({
+      ...callSign,
+      manualCount
+    });
     form.reset({
       code: callSign.code,
       isActive: callSign.isActive,
+      manualParticipationCount: manualCount,
     });
     setOpenDialog(true);
   };
@@ -98,6 +109,7 @@ const CallSignsPage = () => {
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (editingCallSign) {
       updateCallSign(editingCallSign.id, values.code, values.isActive);
+      updateManualParticipationCount(editingCallSign.id, values.manualParticipationCount);
     } else {
       addCallSign(values.code);
     }
@@ -115,24 +127,24 @@ const CallSignsPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-airline-blue mb-2 flex items-center">
             <Tag className="mr-2 h-6 w-6" />
-            Manage Callsigns
+            Gestione Callsign
           </h1>
-          <p className="text-gray-600">Add, edit, or remove pilot callsigns</p>
+          <p className="text-gray-600">Aggiungi, modifica o rimuovi callsign dei piloti</p>
         </div>
         
         <Dialog open={openDialog} onOpenChange={onOpenChange}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Callsign
+              <Plus className="mr-2 h-4 w-4" /> Aggiungi Callsign
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingCallSign ? "Edit Callsign" : "Add New Callsign"}</DialogTitle>
+              <DialogTitle>{editingCallSign ? "Modifica Callsign" : "Aggiungi Nuovo Callsign"}</DialogTitle>
               <DialogDescription>
                 {editingCallSign 
-                  ? "Update the callsign details below." 
-                  : "Enter the details for the new callsign."}
+                  ? "Aggiorna i dettagli del callsign qui sotto." 
+                  : "Inserisci i dettagli del nuovo callsign."}
               </DialogDescription>
             </DialogHeader>
             
@@ -143,9 +155,9 @@ const CallSignsPage = () => {
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Callsign Code</FormLabel>
+                      <FormLabel>Codice Callsign</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. VA001" {...field} />
+                        <Input placeholder="es. VA001" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -153,31 +165,55 @@ const CallSignsPage = () => {
                 />
 
                 {editingCallSign && (
-                  <FormField
-                    control={form.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Active Status</FormLabel>
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Stato Attivo</FormLabel>
+                            <FormDescription>
+                              I callsign inattivi non appariranno nel menu a tendina per i piloti
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="manualParticipationCount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Conteggio Partecipazioni Manuale</FormLabel>
                           <FormDescription>
-                            Inactive callsigns won't appear in the dropdown for pilots
+                            Aggiungi partecipazioni manuali (si aggiungeranno alle partecipazioni approvate)
                           </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              placeholder="0" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
                 
                 <DialogFooter>
                   <Button type="submit">
-                    {editingCallSign ? "Save Changes" : "Add Callsign"}
+                    {editingCallSign ? "Salva Modifiche" : "Aggiungi Callsign"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -188,39 +224,49 @@ const CallSignsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Callsign List</CardTitle>
+          <CardTitle>Lista Callsign</CardTitle>
           <CardDescription>
-            All callsigns registered in the system
+            Tutti i callsign registrati nel sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
-            <TableCaption>List of all available callsigns</TableCaption>
+            <TableCaption>Lista di tutti i callsign disponibili</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Callsign</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Participation Count</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Partecipazioni totali</TableHead>
+                <TableHead>Part. manuali</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {database.callSigns.map((callSign) => {
-                const participationCount = database.eventParticipations.filter(
+                const approvedCount = database.eventParticipations.filter(
                   ep => ep.callSignId === callSign.id && ep.isApproved
                 ).length;
+                
+                const manualCount = getManualParticipationCount(callSign.id);
+                const totalCount = approvedCount + manualCount;
                 
                 return (
                   <TableRow key={callSign.id}>
                     <TableCell className="font-medium">{callSign.code}</TableCell>
                     <TableCell>
                       {callSign.isActive ? (
-                        <Badge className="bg-green-500">Active</Badge>
+                        <Badge className="bg-green-500">Attivo</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-gray-500">Inactive</Badge>
+                        <Badge variant="outline" className="text-gray-500">Inattivo</Badge>
                       )}
                     </TableCell>
-                    <TableCell>{participationCount}</TableCell>
+                    <TableCell>{totalCount}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Hash className="h-4 w-4 mr-1 text-gray-500" />
+                        {manualCount}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
@@ -239,19 +285,19 @@ const CallSignsPage = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Callsign</AlertDialogTitle>
+                              <AlertDialogTitle>Elimina Callsign</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete the callsign "{callSign.code}"? 
-                                This action cannot be undone.
+                                Sei sicuro di voler eliminare il callsign "{callSign.code}"? 
+                                Questa azione non può essere annullata.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>Annulla</AlertDialogCancel>
                               <AlertDialogAction 
                                 className="bg-destructive text-destructive-foreground"
                                 onClick={() => deleteCallSign(callSign.id)}
                               >
-                                Delete
+                                Elimina
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -263,8 +309,8 @@ const CallSignsPage = () => {
               })}
               {database.callSigns.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    No callsigns added yet
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    Nessun callsign aggiunto ancora
                   </TableCell>
                 </TableRow>
               )}

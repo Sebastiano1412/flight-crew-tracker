@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { DatabaseConfig, db, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 interface DatabaseContextType {
   database: DatabaseConfig;
@@ -21,6 +22,8 @@ interface DatabaseContextType {
   getPendingParticipations: () => EventParticipation[];
   getApprovedParticipations: () => EventParticipation[];
   getCallSignParticipationCount: (callSignId: string) => number;
+  updateManualParticipationCount: (callSignId: string, count: number) => void;
+  getManualParticipationCount: (callSignId: string) => number;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
@@ -29,7 +32,8 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Initialize with a default empty database structure to prevent undefined errors
   const [database, setDatabase] = useState<DatabaseConfig>({
     callSigns: [],
-    eventParticipations: []
+    eventParticipations: [],
+    manualParticipationCounts: []
   });
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -51,16 +55,16 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const login = (password: string): boolean => {
     if (password === "asxeventi10") {
       setIsAdmin(true);
-      toast.success("Admin login successful");
+      toast.success("Login admin effettuato");
       return true;
     }
-    toast.error("Invalid password");
+    toast.error("Password non valida");
     return false;
   };
 
   const logout = () => {
     setIsAdmin(false);
-    toast.success("Logged out successfully");
+    toast.success("Logout effettuato");
   };
 
   const addCallSign = (code: string) => {
@@ -73,7 +77,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       ...prev,
       callSigns: [...prev.callSigns, newCallSign]
     }));
-    toast.success(`Call sign ${code} added successfully`);
+    toast.success(`Callsign ${code} aggiunto con successo`);
   };
 
   const updateCallSign = (id: string, code: string, isActive: boolean) => {
@@ -83,15 +87,16 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         cs.id === id ? { ...cs, code, isActive } : cs
       )
     }));
-    toast.success(`Call sign updated successfully`);
+    toast.success(`Callsign aggiornato con successo`);
   };
 
   const deleteCallSign = (id: string) => {
     setDatabase(prev => ({
       ...prev,
-      callSigns: prev.callSigns.filter(cs => cs.id !== id)
+      callSigns: prev.callSigns.filter(cs => cs.id !== id),
+      manualParticipationCounts: prev.manualParticipationCounts.filter(mpc => mpc.callSignId !== id)
     }));
-    toast.success("Call sign deleted successfully");
+    toast.success("Callsign eliminato con successo");
   };
 
   const addEventParticipation = (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => {
@@ -108,7 +113,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       ...prev,
       eventParticipations: [...prev.eventParticipations, newParticipation]
     }));
-    toast.success("Event participation submitted for approval");
+    toast.success("Partecipazione all'evento inviata per approvazione");
   };
 
   const approveEventParticipation = (id: string) => {
@@ -118,7 +123,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         ep.id === id ? { ...ep, isApproved: true, approvedAt: new Date().toISOString() } : ep
       )
     }));
-    toast.success("Event participation approved");
+    toast.success("Partecipazione all'evento approvata");
   };
 
   const editEventParticipation = (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => {
@@ -136,7 +141,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         } : ep
       )
     }));
-    toast.success("Event participation updated");
+    toast.success("Partecipazione all'evento aggiornata");
   };
 
   const deleteEventParticipation = (id: string) => {
@@ -144,7 +149,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       ...prev,
       eventParticipations: prev.eventParticipations.filter(ep => ep.id !== id)
     }));
-    toast.success("Event participation deleted");
+    toast.success("Partecipazione all'evento eliminata");
   };
 
   const getCallSignById = (id: string): CallSign | undefined => {
@@ -153,7 +158,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const getCallSignCode = (id: string): string => {
     const callSign = database.callSigns.find(cs => cs.id === id);
-    return callSign ? callSign.code : "Unknown";
+    return callSign ? callSign.code : "Sconosciuto";
   };
 
   const getActiveCallSigns = (): CallSign[] => {
@@ -169,7 +174,53 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const getCallSignParticipationCount = (callSignId: string): number => {
-    return database.eventParticipations.filter(ep => ep.callSignId === callSignId && ep.isApproved).length;
+    const approvedCount = database.eventParticipations.filter(
+      ep => ep.callSignId === callSignId && ep.isApproved
+    ).length;
+    
+    // Add manual count if available
+    const manualCount = getManualParticipationCount(callSignId);
+    
+    return approvedCount + manualCount;
+  };
+
+  const updateManualParticipationCount = (callSignId: string, count: number) => {
+    // Check if a manual count already exists for this callsign
+    const existingManualCount = database.manualParticipationCounts.find(
+      mpc => mpc.callSignId === callSignId
+    );
+
+    if (existingManualCount) {
+      // Update existing count
+      setDatabase(prev => ({
+        ...prev,
+        manualParticipationCounts: prev.manualParticipationCounts.map(mpc => 
+          mpc.callSignId === callSignId ? { ...mpc, count } : mpc
+        )
+      }));
+    } else {
+      // Add new manual count
+      setDatabase(prev => ({
+        ...prev,
+        manualParticipationCounts: [
+          ...prev.manualParticipationCounts, 
+          { 
+            id: Date.now().toString(), 
+            callSignId, 
+            count,
+            updatedAt: new Date().toISOString() 
+          }
+        ]
+      }));
+    }
+    toast.success("Conteggio partecipazioni manuale aggiornato");
+  };
+
+  const getManualParticipationCount = (callSignId: string): number => {
+    const manualCount = database.manualParticipationCounts.find(
+      mpc => mpc.callSignId === callSignId
+    );
+    return manualCount ? manualCount.count : 0;
   };
 
   const value = {
@@ -189,7 +240,9 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     getActiveCallSigns,
     getPendingParticipations,
     getApprovedParticipations,
-    getCallSignParticipationCount
+    getCallSignParticipationCount,
+    updateManualParticipationCount,
+    getManualParticipationCount
   };
 
   return (
