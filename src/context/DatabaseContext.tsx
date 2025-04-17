@@ -26,13 +26,27 @@ interface DatabaseContextType {
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [database, setDatabase] = useState<DatabaseConfig>(db.load());
+  // Initialize with a default empty database structure to prevent undefined errors
+  const [database, setDatabase] = useState<DatabaseConfig>({
+    callSigns: [],
+    eventParticipations: []
+  });
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  // Save database whenever it changes
+  // Load database on component mount
   useEffect(() => {
-    db.save(database);
-  }, [database]);
+    const loadedDb = db.load();
+    setDatabase(loadedDb);
+    setIsLoaded(true);
+  }, []);
+
+  // Save database whenever it changes, but only after initial load
+  useEffect(() => {
+    if (isLoaded) {
+      db.save(database);
+    }
+  }, [database, isLoaded]);
 
   const login = (password: string): boolean => {
     if (password === "asxeventi10") {

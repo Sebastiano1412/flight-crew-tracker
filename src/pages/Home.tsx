@@ -4,12 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useDatabase } from "@/context/DatabaseContext";
+import { useEffect, useState } from "react";
+import { DatabaseConfig } from "@/config/database";
 
 const Home = () => {
   const { database } = useDatabase();
-  const totalPilots = database.callSigns.filter(cs => cs.isActive).length;
-  const totalEvents = database.eventParticipations.filter(ep => ep.isApproved).length;
-  const pendingApprovals = database.eventParticipations.filter(ep => !ep.isApproved).length;
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Add default values in case database is not yet loaded
+  const totalPilots = database?.callSigns?.filter(cs => cs.isActive)?.length || 0;
+  const totalEvents = database?.eventParticipations?.filter(ep => ep.isApproved)?.length || 0;
+  const pendingApprovals = database?.eventParticipations?.filter(ep => !ep.isApproved)?.length || 0;
+
+  useEffect(() => {
+    if (database) {
+      setIsLoading(false);
+    }
+  }, [database]);
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
 
   return (
     <div className="space-y-8">
