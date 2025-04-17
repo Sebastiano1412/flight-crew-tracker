@@ -11,7 +11,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
       </main>
       <footer className="bg-airline-blue text-white py-4">
         <div className="container mx-auto px-4 text-center">
-          <p>© {new Date().getFullYear()} Virtual Airline Flight Crew Tracker</p>
+          <p>© {new Date().getFullYear()} Report Eventi Aerosachs</p>
         </div>
       </footer>
     </div>

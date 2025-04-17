@@ -28,9 +28,9 @@ const Home = () => {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-airline-blue mb-4">Benvenuto nel Flight Crew Tracker</h1>
+        <h1 className="text-4xl font-bold text-airline-blue mb-4">Report Eventi Aerosachs</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Traccia la partecipazione dei piloti della compagnia aerea virtuale agli eventi, gestisci i callsign e visualizza le statistiche
+          Invia qui i tuoi report dopo aver partecipato ad un evento di Aerosachs e vedi la classifica generale delle partecipazioni
         </p>
       </div>
 

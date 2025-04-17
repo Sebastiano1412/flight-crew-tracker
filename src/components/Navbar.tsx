@@ -18,27 +18,27 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Plane className="h-6 w-6" />
-          <Link to="/" className="text-xl font-bold">Flight Crew Tracker</Link>
+          <Link to="/" className="text-xl font-bold">Report Eventi Aerosachs</Link>
         </div>
         <div className="flex items-center space-x-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="text-white hover:bg-blue-800">
                 <User className="mr-2 h-4 w-4" />
-                Pilot Area
+                Area Piloti
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
                 <Link to="/report" className="flex items-center">
                   <Plane className="mr-2 h-4 w-4" />
-                  Report Participation
+                  Riporta Partecipazione
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/statistics" className="flex items-center">
                   <LineChart className="mr-2 h-4 w-4" />
-                  View Statistics
+                  Visualizza Statistiche
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -56,31 +56,31 @@ const Navbar = () => {
                 <DropdownMenuContent>
                   <DropdownMenuItem asChild>
                     <Link to="/admin/callsigns" className="flex items-center">
-                      Manage Call Signs
+                      Gestisci Callsign
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/admin/approve" className="flex items-center">
-                      Approve Participations
+                      Approva Partecipazioni
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/admin/events" className="flex items-center">
-                      Manage Events
+                      Gestisci Eventi
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button variant="ghost" className="text-white hover:bg-blue-800" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                Esci
               </Button>
             </>
           ) : (
             <Link to="/admin">
               <Button variant="ghost" className="text-white hover:bg-blue-800">
                 <LogIn className="mr-2 h-4 w-4" />
-                Admin Login
+                Accesso Admin
               </Button>
             </Link>
           )}
