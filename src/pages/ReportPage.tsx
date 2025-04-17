@@ -36,20 +36,20 @@ import { useDatabase } from "@/context/DatabaseContext";
 
 const formSchema = z.object({
   callSignId: z.string({
-    required_error: "Please select a callsign.",
+    required_error: "Seleziona un callsign.",
   }),
   date: z.date({
-    required_error: "Please select a date.",
+    required_error: "Seleziona una data.",
   }),
   departureAirport: z.string().min(3, {
-    message: "Departure airport must be at least 3 characters.",
+    message: "L'aeroporto di partenza deve avere almeno 3 caratteri.",
   }).max(4, {
-    message: "Departure airport must not exceed 4 characters.",
+    message: "L'aeroporto di partenza non deve superare i 4 caratteri.",
   }),
   arrivalAirport: z.string().min(3, {
-    message: "Arrival airport must be at least 3 characters.",
+    message: "L'aeroporto di arrivo deve avere almeno 3 caratteri.",
   }).max(4, {
-    message: "Arrival airport must not exceed 4 characters.",
+    message: "L'aeroporto di arrivo non deve superare i 4 caratteri.",
   }),
 });
 
@@ -82,10 +82,10 @@ const ReportPage = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl flex items-center">
             <Plane className="mr-2 h-5 w-5" />
-            Report Event Participation
+            Segnala Partecipazione ad Evento
           </CardTitle>
           <CardDescription>
-            Fill out the form below to report your participation in an airline event
+            Compila il modulo qui sotto per segnalare la tua partecipazione a un evento della compagnia
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -100,7 +100,7 @@ const ReportPage = () => {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a callsign" />
+                          <SelectValue placeholder="Seleziona un callsign" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -112,7 +112,7 @@ const ReportPage = () => {
                           ))
                         ) : (
                           <SelectItem value="none" disabled>
-                            No active callsigns available
+                            Nessun callsign attivo disponibile
                           </SelectItem>
                         )}
                       </SelectContent>
@@ -127,7 +127,7 @@ const ReportPage = () => {
                 name="date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Event Date</FormLabel>
+                    <FormLabel>Data Evento</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -141,7 +141,7 @@ const ReportPage = () => {
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>Seleziona una data</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -168,11 +168,11 @@ const ReportPage = () => {
                   name="departureAirport"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Departure Airport</FormLabel>
+                      <FormLabel>Aeroporto di Partenza</FormLabel>
                       <FormControl>
-                        <Input placeholder="ICAO code (e.g. KJFK)" {...field} />
+                        <Input placeholder="Codice ICAO (es. KJFK)" {...field} />
                       </FormControl>
-                      <FormDescription>Enter the ICAO code</FormDescription>
+                      <FormDescription>Inserisci il codice ICAO</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -183,18 +183,18 @@ const ReportPage = () => {
                   name="arrivalAirport"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Arrival Airport</FormLabel>
+                      <FormLabel>Aeroporto di Arrivo</FormLabel>
                       <FormControl>
-                        <Input placeholder="ICAO code (e.g. EGLL)" {...field} />
+                        <Input placeholder="Codice ICAO (es. EGLL)" {...field} />
                       </FormControl>
-                      <FormDescription>Enter the ICAO code</FormDescription>
+                      <FormDescription>Inserisci il codice ICAO</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
 
-              <Button type="submit" className="w-full">Submit Participation</Button>
+              <Button type="submit" className="w-full">Invia Partecipazione</Button>
             </form>
           </Form>
         </CardContent>

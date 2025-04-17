@@ -20,7 +20,7 @@ import { useDatabase } from "@/context/DatabaseContext";
 
 const formSchema = z.object({
   password: z.string().min(1, {
-    message: "Password is required.",
+    message: "La password è obbligatoria.",
   }),
 });
 
@@ -42,7 +42,7 @@ const AdminLoginPage = () => {
     if (success) {
       navigate("/admin/callsigns");
     } else {
-      setError("Invalid password. Please try again.");
+      setError("Password non valida. Riprova.");
     }
   }
 
@@ -60,9 +60,9 @@ const AdminLoginPage = () => {
               <ShieldAlert className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Admin Access</CardTitle>
+          <CardTitle className="text-2xl text-center">Accesso Admin</CardTitle>
           <CardDescription className="text-center">
-            Enter the admin password to access the staff area
+            Inserisci la password admin per accedere all'area staff
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,14 +75,14 @@ const AdminLoginPage = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter admin password" {...field} />
+                      <Input type="password" placeholder="Inserisci la password admin" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-              <Button type="submit" className="w-full">Login</Button>
+              <Button type="submit" className="w-full">Accedi</Button>
             </form>
           </Form>
         </CardContent>

@@ -65,20 +65,20 @@ import { useDatabase } from "@/context/DatabaseContext";
 
 const formSchema = z.object({
   callSignId: z.string({
-    required_error: "Please select a callsign.",
+    required_error: "Seleziona un callsign.",
   }),
   date: z.date({
-    required_error: "Please select a date.",
+    required_error: "Seleziona una data.",
   }),
   departureAirport: z.string().min(3, {
-    message: "Departure airport must be at least 3 characters.",
+    message: "L'aeroporto di partenza deve avere almeno 3 caratteri.",
   }).max(4, {
-    message: "Departure airport must not exceed 4 characters.",
+    message: "L'aeroporto di partenza non deve superare i 4 caratteri.",
   }),
   arrivalAirport: z.string().min(3, {
-    message: "Arrival airport must be at least 3 characters.",
+    message: "L'aeroporto di arrivo deve avere almeno 3 caratteri.",
   }).max(4, {
-    message: "Arrival airport must not exceed 4 characters.",
+    message: "L'aeroporto di arrivo non deve superare i 4 caratteri.",
   }),
   isApproved: z.boolean().default(true),
 });
@@ -169,9 +169,9 @@ const EventsPage = () => {
       <div>
         <h1 className="text-3xl font-bold text-airline-blue mb-2 flex items-center">
           <Plane className="mr-2 h-6 w-6" />
-          Manage Event Participations
+          Gestisci Partecipazioni Eventi
         </h1>
-        <p className="text-gray-600">Edit or delete participation records</p>
+        <p className="text-gray-600">Modifica o elimina i record di partecipazione</p>
       </div>
 
       <Card>
@@ -180,10 +180,10 @@ const EventsPage = () => {
             <div>
               <CardTitle className="flex items-center">
                 <ListFilter className="mr-2 h-5 w-5" />
-                Event Participation Records
+                Record Partecipazioni Eventi
               </CardTitle>
               <CardDescription>
-                All event participation reports in the system
+                Tutte le segnalazioni di partecipazione a eventi nel sistema
               </CardDescription>
             </div>
             <Select
@@ -191,12 +191,12 @@ const EventsPage = () => {
               onValueChange={(value) => setFilterStatus(value as "all" | "approved" | "pending")}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Filtra per stato" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Records</SelectItem>
-                <SelectItem value="approved">Approved Only</SelectItem>
-                <SelectItem value="pending">Pending Only</SelectItem>
+                <SelectItem value="all">Tutti i Record</SelectItem>
+                <SelectItem value="approved">Solo Approvati</SelectItem>
+                <SelectItem value="pending">Solo In Attesa</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -205,16 +205,16 @@ const EventsPage = () => {
           <Table>
             <TableCaption>
               {filteredEvents.length === 0 
-                ? "No event participation records found" 
-                : `Showing ${filteredEvents.length} records`}
+                ? "Nessun record di partecipazione evento trovato" 
+                : `Mostrati ${filteredEvents.length} record`}
             </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Callsign</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Rotta</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,9 +229,9 @@ const EventsPage = () => {
                   </TableCell>
                   <TableCell>
                     {event.isApproved ? (
-                      <Badge className="bg-green-500">Approved</Badge>
+                      <Badge className="bg-green-500">Approvato</Badge>
                     ) : (
-                      <Badge variant="outline" className="text-yellow-600">Pending</Badge>
+                      <Badge variant="outline" className="text-yellow-600">In Attesa</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -252,19 +252,19 @@ const EventsPage = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Event Participation</AlertDialogTitle>
+                            <AlertDialogTitle>Elimina Partecipazione Evento</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this participation record? 
-                              This action cannot be undone.
+                              Sei sicuro di voler eliminare questo record di partecipazione? 
+                              Questa azione non può essere annullata.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Annulla</AlertDialogCancel>
                             <AlertDialogAction 
                               className="bg-destructive text-destructive-foreground"
                               onClick={() => deleteEventParticipation(event.id)}
                             >
-                              Delete
+                              Elimina
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -278,7 +278,7 @@ const EventsPage = () => {
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Plane className="h-12 w-12 text-gray-200" />
-                      <p>No records found matching the current filter</p>
+                      <p>Nessun record trovato corrispondente al filtro attuale</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -291,9 +291,9 @@ const EventsPage = () => {
       <Dialog open={openDialog} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Event Participation</DialogTitle>
+            <DialogTitle>Modifica Partecipazione Evento</DialogTitle>
             <DialogDescription>
-              Update the details for this participation record
+              Aggiorna i dettagli per questo record di partecipazione
             </DialogDescription>
           </DialogHeader>
           
@@ -308,13 +308,13 @@ const EventsPage = () => {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a callsign" />
+                          <SelectValue placeholder="Seleziona un callsign" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {database.callSigns.map(callSign => (
                           <SelectItem key={callSign.id} value={callSign.id}>
-                            {callSign.code} {!callSign.isActive && "(Inactive)"}
+                            {callSign.code} {!callSign.isActive && "(Inattivo)"}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -329,7 +329,7 @@ const EventsPage = () => {
                 name="date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Event Date</FormLabel>
+                    <FormLabel>Data Evento</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -343,7 +343,7 @@ const EventsPage = () => {
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>Seleziona una data</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -370,9 +370,9 @@ const EventsPage = () => {
                   name="departureAirport"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Departure Airport</FormLabel>
+                      <FormLabel>Aeroporto di Partenza</FormLabel>
                       <FormControl>
-                        <Input placeholder="ICAO code (e.g. KJFK)" {...field} />
+                        <Input placeholder="Codice ICAO (es. KJFK)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -384,9 +384,9 @@ const EventsPage = () => {
                   name="arrivalAirport"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Arrival Airport</FormLabel>
+                      <FormLabel>Aeroporto di Arrivo</FormLabel>
                       <FormControl>
-                        <Input placeholder="ICAO code (e.g. EGLL)" {...field} />
+                        <Input placeholder="Codice ICAO (es. EGLL)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -400,9 +400,9 @@ const EventsPage = () => {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Approval Status</FormLabel>
+                      <FormLabel>Stato Approvazione</FormLabel>
                       <CardDescription>
-                        Approved participations are counted in statistics
+                        Le partecipazioni approvate sono conteggiate nelle statistiche
                       </CardDescription>
                     </div>
                     <FormControl>
@@ -416,7 +416,7 @@ const EventsPage = () => {
               />
               
               <DialogFooter>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit">Salva Modifiche</Button>
               </DialogFooter>
             </form>
           </Form>

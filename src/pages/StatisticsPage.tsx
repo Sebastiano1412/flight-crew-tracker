@@ -31,63 +31,63 @@ const StatisticsPage = () => {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-airline-blue mb-2 flex items-center justify-center">
           <LineChart className="mr-2 h-8 w-8" />
-          Pilot Participation Statistics
+          Statistiche Partecipazioni Piloti
         </h1>
         <p className="text-gray-600">
-          View all pilot participation data and event statistics
+          Visualizza tutti i dati di partecipazione dei piloti e le statistiche degli eventi
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Active Pilots</CardTitle>
+            <CardTitle className="text-xl font-bold">Piloti Attivi</CardTitle>
             <Users className="h-5 w-5 text-airline-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{activeCallSigns.length}</div>
-            <CardDescription>Registered callsigns</CardDescription>
+            <CardDescription>Callsign registrati</CardDescription>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Total Events</CardTitle>
+            <CardTitle className="text-xl font-bold">Eventi Totali</CardTitle>
             <Plane className="h-5 w-5 text-airline-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{approvedParticipations.length}</div>
-            <CardDescription>Approved participations</CardDescription>
+            <CardDescription>Partecipazioni approvate</CardDescription>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Pending</CardTitle>
-            <Badge variant="outline" className="text-yellow-600">Awaiting Approval</Badge>
+            <CardTitle className="text-xl font-bold">In Attesa</CardTitle>
+            <Badge variant="outline" className="text-yellow-600">In Attesa di Approvazione</Badge>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{pendingParticipations.length}</div>
-            <CardDescription>Participations pending approval</CardDescription>
+            <CardDescription>Partecipazioni in attesa di approvazione</CardDescription>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Pilot Participation Leaderboard</CardTitle>
+          <CardTitle className="text-xl">Classifica Partecipazioni Piloti</CardTitle>
           <CardDescription>
-            Ranking of pilots by number of approved event participations
+            Classifica dei piloti per numero di partecipazioni approvate agli eventi
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
-            <TableCaption>Sorted by total approved participations</TableCaption>
+            <TableCaption>Ordinata per numero totale di partecipazioni approvate</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Rank</TableHead>
+                <TableHead className="w-[100px]">Posizione</TableHead>
                 <TableHead>Callsign</TableHead>
-                <TableHead className="text-right">Participation Count</TableHead>
+                <TableHead className="text-right">Numero Partecipazioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,13 +97,13 @@ const StatisticsPage = () => {
                   <TableRow key={callSign.id}>
                     <TableCell className="font-medium">
                       {index === 0 ? (
-                        <Badge className="bg-yellow-500">1st</Badge>
+                        <Badge className="bg-yellow-500">1°</Badge>
                       ) : index === 1 ? (
-                        <Badge className="bg-gray-400">2nd</Badge>
+                        <Badge className="bg-gray-400">2°</Badge>
                       ) : index === 2 ? (
-                        <Badge className="bg-amber-600">3rd</Badge>
+                        <Badge className="bg-amber-600">3°</Badge>
                       ) : (
-                        `${index + 1}th`
+                        `${index + 1}°`
                       )}
                     </TableCell>
                     <TableCell>{callSign.code}</TableCell>
@@ -114,7 +114,7 @@ const StatisticsPage = () => {
               {sortedCallSigns.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
-                    No participation data available
+                    Nessun dato di partecipazione disponibile
                   </TableCell>
                 </TableRow>
               )}
@@ -125,9 +125,9 @@ const StatisticsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Recent Approved Participations</CardTitle>
+          <CardTitle className="text-xl">Partecipazioni Recenti Approvate</CardTitle>
           <CardDescription>
-            Latest event participations that have been approved
+            Ultime partecipazioni agli eventi che sono state approvate
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,8 +135,8 @@ const StatisticsPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Callsign</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Route</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Rotta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,7 +150,7 @@ const StatisticsPage = () => {
               {approvedParticipations.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
-                    No approved participations yet
+                    Nessuna partecipazione approvata ancora
                   </TableCell>
                 </TableRow>
               )}

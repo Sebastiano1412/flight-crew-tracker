@@ -39,35 +39,35 @@ const ApprovalPage = () => {
       <div>
         <h1 className="text-3xl font-bold text-airline-blue mb-2 flex items-center">
           <CheckCircle className="mr-2 h-6 w-6" />
-          Approve Event Participations
+          Approva Partecipazioni Eventi
         </h1>
-        <p className="text-gray-600">Review and approve pending event participation reports</p>
+        <p className="text-gray-600">Rivedi e approva le segnalazioni di partecipazione in attesa</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Calendar className="mr-2 h-5 w-5" />
-            Pending Approvals
+            Approvazioni in Attesa
           </CardTitle>
           <CardDescription>
-            Event participation reports waiting for staff approval
+            Segnalazioni di partecipazione in attesa di approvazione staff
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableCaption>
               {pendingParticipations.length === 0 
-                ? "No pending approvals at this time" 
-                : "Approve or reject these participation reports"}
+                ? "Nessuna approvazione in attesa al momento" 
+                : "Approva o rifiuta queste segnalazioni di partecipazione"}
             </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Callsign</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Rotta</TableHead>
+                <TableHead>Inviato il</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,24 +88,24 @@ const ApprovalPage = () => {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm" className="text-green-600">
-                            <CheckCircle className="mr-1 h-4 w-4" /> Approve
+                            <CheckCircle className="mr-1 h-4 w-4" /> Approva
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Approve Participation</AlertDialogTitle>
+                            <AlertDialogTitle>Approva Partecipazione</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to approve this participation report?
-                              It will be counted in the pilot's statistics.
+                              Sei sicuro di voler approvare questa segnalazione di partecipazione?
+                              Sarà conteggiata nelle statistiche del pilota.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Annulla</AlertDialogCancel>
                             <AlertDialogAction 
                               className="bg-green-600 text-white hover:bg-green-700"
                               onClick={() => approveEventParticipation(event.id)}
                             >
-                              Approve
+                              Approva
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -114,24 +114,24 @@ const ApprovalPage = () => {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm" className="text-destructive">
-                            <XCircle className="mr-1 h-4 w-4" /> Reject
+                            <XCircle className="mr-1 h-4 w-4" /> Rifiuta
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Reject Participation</AlertDialogTitle>
+                            <AlertDialogTitle>Rifiuta Partecipazione</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to reject and delete this participation report?
-                              This action cannot be undone.
+                              Sei sicuro di voler rifiutare ed eliminare questa segnalazione di partecipazione?
+                              Questa azione non può essere annullata.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Annulla</AlertDialogCancel>
                             <AlertDialogAction 
                               className="bg-destructive text-destructive-foreground"
                               onClick={() => deleteEventParticipation(event.id)}
                             >
-                              Reject
+                              Rifiuta
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -145,7 +145,7 @@ const ApprovalPage = () => {
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <CheckCircle className="h-12 w-12 text-green-200" />
-                      <p>All caught up! No pending approvals.</p>
+                      <p>Tutto in ordine! Nessuna approvazione in attesa.</p>
                     </div>
                   </TableCell>
                 </TableRow>
