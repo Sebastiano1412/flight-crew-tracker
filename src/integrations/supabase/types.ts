@@ -9,7 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      app_settings: {
+        Row: {
+          id: string
+          language: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          language?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          language?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      callsigns: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      event_participations: {
+        Row: {
+          approved_at: string | null
+          arrival_airport: string
+          callsign_id: string
+          date: string
+          departure_airport: string
+          id: string
+          is_approved: boolean
+          submitted_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          arrival_airport: string
+          callsign_id: string
+          date: string
+          departure_airport: string
+          id?: string
+          is_approved?: boolean
+          submitted_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          arrival_airport?: string
+          callsign_id?: string
+          date?: string
+          departure_airport?: string
+          id?: string
+          is_approved?: boolean
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participations_callsign_id_fkey"
+            columns: ["callsign_id"]
+            isOneToOne: false
+            referencedRelation: "callsigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_participation_counts: {
+        Row: {
+          callsign_id: string
+          count: number
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          callsign_id: string
+          count?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          callsign_id?: string
+          count?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_participation_counts_callsign_id_fkey"
+            columns: ["callsign_id"]
+            isOneToOne: true
+            referencedRelation: "callsigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
