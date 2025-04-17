@@ -1,28 +1,28 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { DatabaseConfig, db, CallSign, EventParticipation } from '../config/database';
+import { DatabaseConfig, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
 interface DatabaseContextType {
   database: DatabaseConfig;
   isAdmin: boolean;
-  login: (password: string) => boolean;
+  login: (password: string) => Promise<boolean>;
   logout: () => void;
-  addCallSign: (code: string) => void;
-  updateCallSign: (id: string, code: string, isActive: boolean) => void;
-  deleteCallSign: (id: string) => void;
-  addEventParticipation: (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => void;
-  approveEventParticipation: (id: string) => void;
-  editEventParticipation: (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => void;
-  deleteEventParticipation: (id: string) => void;
+  addCallSign: (code: string) => Promise<void>;
+  updateCallSign: (id: string, code: string, isActive: boolean) => Promise<void>;
+  deleteCallSign: (id: string) => Promise<void>;
+  addEventParticipation: (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => Promise<void>;
+  approveEventParticipation: (id: string) => Promise<void>;
+  editEventParticipation: (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => Promise<void>;
+  deleteEventParticipation: (id: string) => Promise<void>;
   getCallSignById: (id: string) => CallSign | undefined;
   getCallSignCode: (id: string) => string;
   getActiveCallSigns: () => CallSign[];
   getPendingParticipations: () => EventParticipation[];
   getApprovedParticipations: () => EventParticipation[];
   getCallSignParticipationCount: (callSignId: string) => number;
-  updateManualParticipationCount: (callSignId: string, count: number) => void;
+  updateManualParticipationCount: (callSignId: string, count: number) => Promise<void>;
   getManualParticipationCount: (callSignId: string) => number;
 }
 
@@ -38,21 +38,74 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  // Load database on component mount
+  // Load database from Supabase on component mount
   useEffect(() => {
-    const loadedDb = db.load();
-    setDatabase(loadedDb);
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        // Fetch callsigns
+        const { data: callSigns, error: callSignsError } = await supabase
+          .from('callsigns')
+          .select('*');
+        
+        if (callSignsError) throw callSignsError;
+        
+        // Fetch event participations
+        const { data: eventParticipations, error: participationsError } = await supabase
+          .from('event_participations')
+          .select('*');
+        
+        if (participationsError) throw participationsError;
+        
+        // Fetch manual participation counts
+        const { data: manualCounts, error: countsError } = await supabase
+          .from('manual_participation_counts')
+          .select('*');
+        
+        if (countsError) throw countsError;
+
+        // Transform data to match our local format
+        const formattedCallSigns = callSigns.map(cs => ({
+          id: cs.id,
+          code: cs.code,
+          isActive: cs.is_active
+        }));
+
+        const formattedParticipations = eventParticipations.map(ep => ({
+          id: ep.id,
+          callSignId: ep.callsign_id,
+          date: ep.date,
+          departureAirport: ep.departure_airport,
+          arrivalAirport: ep.arrival_airport,
+          isApproved: ep.is_approved,
+          submittedAt: ep.submitted_at,
+          approvedAt: ep.approved_at
+        }));
+
+        const formattedCounts = manualCounts.map(mc => ({
+          id: mc.id,
+          callSignId: mc.callsign_id,
+          count: mc.count,
+          updatedAt: mc.updated_at
+        }));
+
+        // Set database state with fetched data
+        setDatabase({
+          callSigns: formattedCallSigns,
+          eventParticipations: formattedParticipations,
+          manualParticipationCounts: formattedCounts
+        });
+
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Error loading data from Supabase:', error);
+        toast.error('Errore nel caricamento dei dati');
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Save database whenever it changes, but only after initial load
-  useEffect(() => {
-    if (isLoaded) {
-      db.save(database);
-    }
-  }, [database, isLoaded]);
-
-  const login = (password: string): boolean => {
+  const login = async (password: string): Promise<boolean> => {
     if (password === "asxeventi10") {
       setIsAdmin(true);
       toast.success("Login admin effettuato");
@@ -67,89 +120,231 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     toast.success("Logout effettuato");
   };
 
-  const addCallSign = (code: string) => {
-    const newCallSign: CallSign = {
-      id: Date.now().toString(),
-      code,
-      isActive: true
-    };
-    setDatabase(prev => ({
-      ...prev,
-      callSigns: [...prev.callSigns, newCallSign]
-    }));
-    toast.success(`Callsign ${code} aggiunto con successo`);
+  const addCallSign = async (code: string) => {
+    try {
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('callsigns')
+        .insert([{ code, is_active: true }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      // Update local state
+      const newCallSign: CallSign = {
+        id: data.id,
+        code: data.code,
+        isActive: data.is_active
+      };
+
+      setDatabase(prev => ({
+        ...prev,
+        callSigns: [...prev.callSigns, newCallSign]
+      }));
+
+      toast.success(`Callsign ${code} aggiunto con successo`);
+    } catch (error) {
+      console.error('Error adding callsign:', error);
+      toast.error('Errore nell\'aggiunta del callsign');
+    }
   };
 
-  const updateCallSign = (id: string, code: string, isActive: boolean) => {
-    setDatabase(prev => ({
-      ...prev,
-      callSigns: prev.callSigns.map(cs => 
-        cs.id === id ? { ...cs, code, isActive } : cs
-      )
-    }));
-    toast.success(`Callsign aggiornato con successo`);
+  const updateCallSign = async (id: string, code: string, isActive: boolean) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('callsigns')
+        .update({ code, is_active: isActive })
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      // Update local state
+      setDatabase(prev => ({
+        ...prev,
+        callSigns: prev.callSigns.map(cs => 
+          cs.id === id ? { ...cs, code, isActive } : cs
+        )
+      }));
+
+      toast.success(`Callsign aggiornato con successo`);
+    } catch (error) {
+      console.error('Error updating callsign:', error);
+      toast.error('Errore nell\'aggiornamento del callsign');
+    }
   };
 
-  const deleteCallSign = (id: string) => {
-    setDatabase(prev => ({
-      ...prev,
-      callSigns: prev.callSigns.filter(cs => cs.id !== id),
-      manualParticipationCounts: prev.manualParticipationCounts.filter(mpc => mpc.callSignId !== id)
-    }));
-    toast.success("Callsign eliminato con successo");
+  const deleteCallSign = async (id: string) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('callsigns')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      // Update local state
+      setDatabase(prev => ({
+        ...prev,
+        callSigns: prev.callSigns.filter(cs => cs.id !== id),
+        manualParticipationCounts: prev.manualParticipationCounts.filter(mpc => mpc.callSignId !== id)
+      }));
+
+      toast.success("Callsign eliminato con successo");
+    } catch (error) {
+      console.error('Error deleting callsign:', error);
+      toast.error('Errore nell\'eliminazione del callsign');
+    }
   };
 
-  const addEventParticipation = (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => {
-    const newParticipation: EventParticipation = {
-      id: Date.now().toString(),
-      callSignId,
-      date,
-      departureAirport,
-      arrivalAirport,
-      isApproved: false,
-      submittedAt: new Date().toISOString()
-    };
-    setDatabase(prev => ({
-      ...prev,
-      eventParticipations: [...prev.eventParticipations, newParticipation]
-    }));
-    toast.success("Partecipazione all'evento inviata per approvazione");
+  const addEventParticipation = async (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => {
+    try {
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('event_participations')
+        .insert([{
+          callsign_id: callSignId,
+          date,
+          departure_airport: departureAirport,
+          arrival_airport: arrivalAirport,
+          is_approved: false
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      // Update local state
+      const newParticipation: EventParticipation = {
+        id: data.id,
+        callSignId: data.callsign_id,
+        date: data.date,
+        departureAirport: data.departure_airport,
+        arrivalAirport: data.arrival_airport,
+        isApproved: data.is_approved,
+        submittedAt: data.submitted_at
+      };
+
+      setDatabase(prev => ({
+        ...prev,
+        eventParticipations: [...prev.eventParticipations, newParticipation]
+      }));
+
+      toast.success("Partecipazione all'evento inviata per approvazione");
+    } catch (error) {
+      console.error('Error adding event participation:', error);
+      toast.error('Errore nell\'invio della partecipazione');
+    }
   };
 
-  const approveEventParticipation = (id: string) => {
-    setDatabase(prev => ({
-      ...prev,
-      eventParticipations: prev.eventParticipations.map(ep => 
-        ep.id === id ? { ...ep, isApproved: true, approvedAt: new Date().toISOString() } : ep
-      )
-    }));
-    toast.success("Partecipazione all'evento approvata");
+  const approveEventParticipation = async (id: string) => {
+    try {
+      const now = new Date().toISOString();
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('event_participations')
+        .update({ 
+          is_approved: true,
+          approved_at: now
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      // Update local state
+      setDatabase(prev => ({
+        ...prev,
+        eventParticipations: prev.eventParticipations.map(ep => 
+          ep.id === id ? { ...ep, isApproved: true, approvedAt: now } : ep
+        )
+      }));
+
+      toast.success("Partecipazione all'evento approvata");
+    } catch (error) {
+      console.error('Error approving event participation:', error);
+      toast.error('Errore nell\'approvazione della partecipazione');
+    }
   };
 
-  const editEventParticipation = (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => {
-    setDatabase(prev => ({
-      ...prev,
-      eventParticipations: prev.eventParticipations.map(ep => 
-        ep.id === id ? { 
-          ...ep, 
-          callSignId, 
-          date, 
-          departureAirport, 
-          arrivalAirport, 
-          isApproved,
-          ...(isApproved && !ep.isApproved ? { approvedAt: new Date().toISOString() } : {})
-        } : ep
-      )
-    }));
-    toast.success("Partecipazione all'evento aggiornata");
+  const editEventParticipation = async (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => {
+    try {
+      const updateData: any = {
+        callsign_id: callSignId,
+        date,
+        departure_airport: departureAirport,
+        arrival_airport: arrivalAirport,
+        is_approved: isApproved
+      };
+      
+      // Check if we're approving for the first time
+      const existingEvent = database.eventParticipations.find(ep => ep.id === id);
+      if (isApproved && existingEvent && !existingEvent.isApproved) {
+        updateData.approved_at = new Date().toISOString();
+      }
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('event_participations')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      // Update local state
+      setDatabase(prev => ({
+        ...prev,
+        eventParticipations: prev.eventParticipations.map(ep => {
+          if (ep.id === id) {
+            const updatedEp = { 
+              ...ep, 
+              callSignId, 
+              date, 
+              departureAirport, 
+              arrivalAirport, 
+              isApproved
+            };
+            
+            if (isApproved && !ep.isApproved) {
+              updatedEp.approvedAt = updateData.approved_at;
+            }
+            
+            return updatedEp;
+          }
+          return ep;
+        })
+      }));
+
+      toast.success("Partecipazione all'evento aggiornata");
+    } catch (error) {
+      console.error('Error editing event participation:', error);
+      toast.error('Errore nell\'aggiornamento della partecipazione');
+    }
   };
 
-  const deleteEventParticipation = (id: string) => {
-    setDatabase(prev => ({
-      ...prev,
-      eventParticipations: prev.eventParticipations.filter(ep => ep.id !== id)
-    }));
-    toast.success("Partecipazione all'evento eliminata");
+  const deleteEventParticipation = async (id: string) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('event_participations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      // Update local state
+      setDatabase(prev => ({
+        ...prev,
+        eventParticipations: prev.eventParticipations.filter(ep => ep.id !== id)
+      }));
+
+      toast.success("Partecipazione all'evento eliminata");
+    } catch (error) {
+      console.error('Error deleting event participation:', error);
+      toast.error('Errore nell\'eliminazione della partecipazione');
+    }
   };
 
   const getCallSignById = (id: string): CallSign | undefined => {
@@ -184,36 +379,63 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     return approvedCount + manualCount;
   };
 
-  const updateManualParticipationCount = (callSignId: string, count: number) => {
+  const updateManualParticipationCount = async (callSignId: string, count: number) => {
     // Check if a manual count already exists for this callsign
     const existingManualCount = database.manualParticipationCounts.find(
       mpc => mpc.callSignId === callSignId
     );
 
-    if (existingManualCount) {
-      // Update existing count
-      setDatabase(prev => ({
-        ...prev,
-        manualParticipationCounts: prev.manualParticipationCounts.map(mpc => 
-          mpc.callSignId === callSignId ? { ...mpc, count } : mpc
-        )
-      }));
-    } else {
-      // Add new manual count
-      setDatabase(prev => ({
-        ...prev,
-        manualParticipationCounts: [
-          ...prev.manualParticipationCounts, 
-          { 
-            id: Date.now().toString(), 
-            callSignId, 
+    try {
+      if (existingManualCount) {
+        // Update existing count in Supabase
+        const { error } = await supabase
+          .from('manual_participation_counts')
+          .update({ count, updated_at: new Date().toISOString() })
+          .eq('callsign_id', callSignId);
+        
+        if (error) throw error;
+
+        // Update local state
+        setDatabase(prev => ({
+          ...prev,
+          manualParticipationCounts: prev.manualParticipationCounts.map(mpc => 
+            mpc.callSignId === callSignId ? { ...mpc, count, updatedAt: new Date().toISOString() } : mpc
+          )
+        }));
+      } else {
+        // Insert new count in Supabase
+        const { data, error } = await supabase
+          .from('manual_participation_counts')
+          .insert([{ 
+            callsign_id: callSignId, 
             count,
-            updatedAt: new Date().toISOString() 
-          }
-        ]
-      }));
+            updated_at: new Date().toISOString() 
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+
+        // Update local state
+        setDatabase(prev => ({
+          ...prev,
+          manualParticipationCounts: [
+            ...prev.manualParticipationCounts, 
+            { 
+              id: data.id, 
+              callSignId, 
+              count,
+              updatedAt: data.updated_at 
+            }
+          ]
+        }));
+      }
+
+      toast.success("Conteggio partecipazioni manuale aggiornato");
+    } catch (error) {
+      console.error('Error updating manual participation count:', error);
+      toast.error('Errore nell\'aggiornamento del conteggio manuale');
     }
-    toast.success("Conteggio partecipazioni manuale aggiornato");
   };
 
   const getManualParticipationCount = (callSignId: string): number => {

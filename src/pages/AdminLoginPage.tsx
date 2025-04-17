@@ -28,6 +28,7 @@ const AdminLoginPage = () => {
   const { login, isAdmin } = useDatabase();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,13 +37,22 @@ const AdminLoginPage = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setError("");
-    const success = login(values.password);
-    if (success) {
-      navigate("/admin/callsigns");
-    } else {
-      setError("Password non valida. Riprova.");
+    setIsLoading(true);
+    
+    try {
+      const success = await login(values.password);
+      if (success) {
+        navigate("/admin/callsigns");
+      } else {
+        setError("Password non valida. Riprova.");
+      }
+    } catch (error) {
+      setError("Si è verificato un errore. Riprova più tardi.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -82,7 +92,9 @@ const AdminLoginPage = () => {
                 )}
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-              <Button type="submit" className="w-full">Accedi</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Elaborazione..." : "Accedi"}
+              </Button>
             </form>
           </Form>
         </CardContent>
