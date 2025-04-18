@@ -26,9 +26,19 @@ import {
 import { useDatabase } from "@/context/DatabaseContext";
 import { useState, useEffect } from "react";
 import MilestonePopup from "@/components/MilestonePopup";
+import { useToast } from "@/hooks/use-toast";
 
 const ApprovalPage = () => {
-  const { isAdmin, getPendingParticipations, getCallSignCode, approveEventParticipation, deleteEventParticipation, getCallSignParticipationCount } = useDatabase();
+  const { toast } = useToast();
+  const { 
+    isAdmin, 
+    getPendingParticipations, 
+    getCallSignCode, 
+    approveEventParticipation, 
+    deleteEventParticipation, 
+    getCallSignParticipationCount 
+  } = useDatabase();
+  
   const [milestoneDetails, setMilestoneDetails] = useState<{ callSign: string; milestone: number; open: boolean }>({
     callSign: "",
     milestone: 0,
@@ -51,28 +61,39 @@ const ApprovalPage = () => {
   }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount]);
 
   const handleApprove = async (eventId: string, callSignId: string) => {
+    // Get the count BEFORE approval to check if approval will trigger a milestone
+    const preApprovalCount = getCallSignParticipationCount(callSignId);
+    const callSignCode = getCallSignCode(callSignId);
+    console.log(`Before approval: CallSign ${callSignCode} has ${preApprovalCount} participations`);
+    
+    // Approve the participation
     await approveEventParticipation(eventId);
     
-    // Check if a milestone has been reached
-    const callSignCode = getCallSignCode(callSignId);
-    
-    // This includes both approved events and manual counts
-    const participationCount = getCallSignParticipationCount(callSignId);
-    
-    console.log(`After approval: CallSign ${callSignCode} now has ${participationCount} total participations`);
+    // Now get the updated count AFTER approval
+    const postApprovalCount = getCallSignParticipationCount(callSignId);
+    console.log(`After approval: CallSign ${callSignCode} now has ${postApprovalCount} participations`);
     
     // Check if the count matches one of the milestone values
     const milestones = [20, 40, 60, 80, 100];
-    const reachedMilestone = milestones.find(m => participationCount === m);
     
-    console.log(`Checking milestone: ${reachedMilestone ? `Reached milestone ${reachedMilestone}` : 'No milestone reached'}`);
-    
-    if (reachedMilestone) {
-      setMilestoneDetails({
-        callSign: callSignCode,
-        milestone: reachedMilestone,
-        open: true
-      });
+    // Check if any milestone was reached with this approval
+    for (const milestone of milestones) {
+      // If we crossed a milestone threshold with this approval
+      if (preApprovalCount < milestone && postApprovalCount >= milestone) {
+        console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
+        toast({
+          title: "Traguardo raggiunto!",
+          description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
+        });
+        
+        setMilestoneDetails({
+          callSign: callSignCode,
+          milestone: milestone,
+          open: true
+        });
+        
+        break;  // Only show one milestone popup at a time
+      }
     }
   };
 
