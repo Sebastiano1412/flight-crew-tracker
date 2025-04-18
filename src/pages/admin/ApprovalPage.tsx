@@ -36,7 +36,8 @@ const ApprovalPage = () => {
     getCallSignCode, 
     approveEventParticipation, 
     deleteEventParticipation, 
-    getCallSignParticipationCount 
+    getCallSignParticipationCount,
+    getManualParticipationCount
   } = useDatabase();
   
   const [milestoneDetails, setMilestoneDetails] = useState<{ callSign: string; milestone: number; open: boolean }>({
@@ -54,11 +55,15 @@ const ApprovalPage = () => {
       pendingParticipations.forEach(participation => {
         const callSignId = participation.callSignId;
         const callSignCode = getCallSignCode(callSignId);
-        const count = getCallSignParticipationCount(callSignId);
-        console.log(`CallSign: ${callSignCode}, ID: ${callSignId}, Total Count: ${count}`);
+        const approvedCount = pendingParticipations.filter(
+          p => p.callSignId === callSignId && p.isApproved
+        ).length;
+        const manualCount = getManualParticipationCount(callSignId);
+        const totalCount = getCallSignParticipationCount(callSignId);
+        console.log(`CallSign: ${callSignCode}, ID: ${callSignId}, Approved Events: ${approvedCount}, Manual Count: ${manualCount}, Total Count: ${totalCount}`);
       });
     }
-  }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount]);
+  }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount, getManualParticipationCount]);
 
   const handleApprove = async (eventId: string, callSignId: string) => {
     // Get the count BEFORE approval to check if approval will trigger a milestone
@@ -81,15 +86,18 @@ const ApprovalPage = () => {
       // If we crossed a milestone threshold with this approval
       if (preApprovalCount < milestone && postApprovalCount >= milestone) {
         console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
-        toast({
-          title: "Traguardo raggiunto!",
-          description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
-        });
         
+        // Force the milestone popup to open
         setMilestoneDetails({
           callSign: callSignCode,
           milestone: milestone,
           open: true
+        });
+        
+        // Show toast notification as well
+        toast({
+          title: "Traguardo raggiunto!",
+          description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
         });
         
         break;  // Only show one milestone popup at a time

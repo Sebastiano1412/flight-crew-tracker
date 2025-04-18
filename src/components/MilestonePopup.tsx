@@ -12,8 +12,10 @@ interface MilestonePopupProps {
 }
 
 const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, open, onClose }) => {
+  console.log(`MilestonePopup rendering with open=${open}, callSign=${callSign}, milestone=${milestone}`);
+  
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-bold text-center">
