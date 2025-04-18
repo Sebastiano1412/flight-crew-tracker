@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { DatabaseConfig, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
@@ -29,7 +28,6 @@ interface DatabaseContextType {
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize with a default empty database structure to prevent undefined errors
   const [database, setDatabase] = useState<DatabaseConfig>({
     callSigns: [],
     eventParticipations: [],
@@ -38,32 +36,27 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  // Load database from Supabase on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch callsigns
         const { data: callSigns, error: callSignsError } = await supabase
           .from('callsigns')
           .select('*');
         
         if (callSignsError) throw callSignsError;
         
-        // Fetch event participations
         const { data: eventParticipations, error: participationsError } = await supabase
           .from('event_participations')
           .select('*');
         
         if (participationsError) throw participationsError;
         
-        // Fetch manual participation counts
         const { data: manualCounts, error: countsError } = await supabase
           .from('manual_participation_counts')
           .select('*');
         
         if (countsError) throw countsError;
 
-        // Transform data to match our local format
         const formattedCallSigns = callSigns.map(cs => ({
           id: cs.id,
           code: cs.code,
@@ -88,7 +81,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
           updatedAt: mc.updated_at
         }));
 
-        // Set database state with fetched data
         setDatabase({
           callSigns: formattedCallSigns,
           eventParticipations: formattedParticipations,
@@ -122,7 +114,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addCallSign = async (code: string) => {
     try {
-      // Insert into Supabase
       const { data, error } = await supabase
         .from('callsigns')
         .insert([{ code, is_active: true }])
@@ -131,7 +122,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       const newCallSign: CallSign = {
         id: data.id,
         code: data.code,
@@ -152,7 +142,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateCallSign = async (id: string, code: string, isActive: boolean) => {
     try {
-      // Update in Supabase
       const { error } = await supabase
         .from('callsigns')
         .update({ code, is_active: isActive })
@@ -160,7 +149,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       setDatabase(prev => ({
         ...prev,
         callSigns: prev.callSigns.map(cs => 
@@ -177,7 +165,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteCallSign = async (id: string) => {
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('callsigns')
         .delete()
@@ -185,7 +172,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       setDatabase(prev => ({
         ...prev,
         callSigns: prev.callSigns.filter(cs => cs.id !== id),
@@ -201,7 +187,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addEventParticipation = async (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => {
     try {
-      // Insert into Supabase
       const { data, error } = await supabase
         .from('event_participations')
         .insert([{
@@ -216,7 +201,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       const newParticipation: EventParticipation = {
         id: data.id,
         callSignId: data.callsign_id,
@@ -243,7 +227,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       const now = new Date().toISOString();
       
-      // Update in Supabase
       const { error } = await supabase
         .from('event_participations')
         .update({ 
@@ -254,7 +237,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       setDatabase(prev => ({
         ...prev,
         eventParticipations: prev.eventParticipations.map(ep => 
@@ -279,13 +261,11 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         is_approved: isApproved
       };
       
-      // Check if we're approving for the first time
       const existingEvent = database.eventParticipations.find(ep => ep.id === id);
       if (isApproved && existingEvent && !existingEvent.isApproved) {
         updateData.approved_at = new Date().toISOString();
       }
       
-      // Update in Supabase
       const { error } = await supabase
         .from('event_participations')
         .update(updateData)
@@ -293,7 +273,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       setDatabase(prev => ({
         ...prev,
         eventParticipations: prev.eventParticipations.map(ep => {
@@ -326,7 +305,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteEventParticipation = async (id: string) => {
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('event_participations')
         .delete()
@@ -334,7 +312,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       if (error) throw error;
 
-      // Update local state
       setDatabase(prev => ({
         ...prev,
         eventParticipations: prev.eventParticipations.filter(ep => ep.id !== id)
@@ -373,21 +350,18 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       ep => ep.callSignId === callSignId && ep.isApproved
     ).length;
     
-    // Add manual count if available
     const manualCount = getManualParticipationCount(callSignId);
     
     return approvedCount + manualCount;
   };
 
   const updateManualParticipationCount = async (callSignId: string, count: number) => {
-    // Check if a manual count already exists for this callsign
     const existingManualCount = database.manualParticipationCounts.find(
       mpc => mpc.callSignId === callSignId
     );
 
     try {
       if (existingManualCount) {
-        // Update existing count in Supabase
         const { error } = await supabase
           .from('manual_participation_counts')
           .update({ count, updated_at: new Date().toISOString() })
@@ -395,7 +369,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         
         if (error) throw error;
 
-        // Update local state
         setDatabase(prev => ({
           ...prev,
           manualParticipationCounts: prev.manualParticipationCounts.map(mpc => 
@@ -403,7 +376,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
           )
         }));
       } else {
-        // Insert new count in Supabase
         const { data, error } = await supabase
           .from('manual_participation_counts')
           .insert([{ 
@@ -416,7 +388,6 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         
         if (error) throw error;
 
-        // Update local state
         setDatabase(prev => ({
           ...prev,
           manualParticipationCounts: [

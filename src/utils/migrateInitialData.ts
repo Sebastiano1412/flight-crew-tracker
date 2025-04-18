@@ -1,96 +1,114 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "../config/database";
+import { toast } from "sonner";
 
 export const migrateLocalStorageToSupabase = async () => {
-  try {
-    // Check if migration has been done
-    const { data: existingCallsigns } = await supabase
-      .from('callsigns')
-      .select('count')
-      .single();
-    
-    // If there are already callsigns, skip migration
-    if (existingCallsigns && existingCallsigns.count > 0) {
-      console.log('Migration already completed. Skipping...');
-      return;
-    }
-    
-    // Load local storage data
-    const localData = db.load();
-    
-    // Check if we have data to migrate
-    if (!localData.callSigns || localData.callSigns.length === 0) {
-      console.log('No local data to migrate.');
-      return;
-    }
-    
-    console.log('Starting migration from localStorage to Supabase...');
-    
-    // Prepare data for insert
-    const callsigns = localData.callSigns.map(cs => ({
-      id: cs.id,
-      code: cs.code,
-      is_active: cs.isActive
-    }));
-    
-    const eventParticipations = localData.eventParticipations.map(ep => ({
-      id: ep.id,
-      callsign_id: ep.callSignId,
-      date: ep.date,
-      departure_airport: ep.departureAirport,
-      arrival_airport: ep.arrivalAirport,
-      is_approved: ep.isApproved,
-      submitted_at: ep.submittedAt,
-      approved_at: ep.approvedAt
-    }));
-    
-    const manualCounts = localData.manualParticipationCounts.map(mc => ({
-      id: mc.id,
-      callsign_id: mc.callSignId,
-      count: mc.count,
-      updated_at: mc.updatedAt
-    }));
-    
-    // Insert data into Supabase
-    if (callsigns.length > 0) {
-      const { error: callsignsError } = await supabase
-        .from('callsigns')
-        .upsert(callsigns);
-      
-      if (callsignsError) {
-        console.error('Error migrating callsigns:', callsignsError);
-      } else {
-        console.log(`Migrated ${callsigns.length} callsigns.`);
-      }
-    }
-    
-    if (eventParticipations.length > 0) {
-      const { error: eventsError } = await supabase
-        .from('event_participations')
-        .upsert(eventParticipations);
-      
-      if (eventsError) {
-        console.error('Error migrating event participations:', eventsError);
-      } else {
-        console.log(`Migrated ${eventParticipations.length} event participations.`);
-      }
-    }
-    
-    if (manualCounts.length > 0) {
-      const { error: countsError } = await supabase
-        .from('manual_participation_counts')
-        .upsert(manualCounts);
-      
-      if (countsError) {
-        console.error('Error migrating manual counts:', countsError);
-      } else {
-        console.log(`Migrated ${manualCounts.length} manual participation counts.`);
-      }
-    }
-    
-    console.log('Migration completed.');
-  } catch (error) {
-    console.error('Migration failed:', error);
+  const hasRun = localStorage.getItem("supabaseMigrationCompleted");
+  if (hasRun === "true") {
+    return;
   }
+
+  console.info("Starting migration from localStorage to Supabase...");
+
+  try {
+    // Migrate callsigns
+    const localCallsigns = localStorage.getItem("callSigns");
+    if (localCallsigns) {
+      try {
+        const callsigns = JSON.parse(localCallsigns);
+        
+        // Skip migration if using numeric IDs (incompatible with UUID)
+        const hasNumericIds = callsigns.some((cs: any) => 
+          typeof cs.id === 'number' || /^\d+$/.test(cs.id)
+        );
+        
+        if (!hasNumericIds && callsigns.length > 0) {
+          for (const cs of callsigns) {
+            const { error } = await supabase
+              .from('callsigns')
+              .insert({
+                id: cs.id,
+                code: cs.code,
+                is_active: cs.isActive
+              });
+            
+            if (error) throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error migrating callsigns:", error);
+      }
+    }
+
+    // Migrate event participations
+    const localParticipations = localStorage.getItem("eventParticipations");
+    if (localParticipations) {
+      try {
+        const participations = JSON.parse(localParticipations);
+        
+        // Check if the callsigns have numeric IDs, if so skip migration
+        const hasNumericIds = participations.some((p: any) => 
+          typeof p.callSignId === 'number' || /^\d+$/.test(p.callSignId)
+        );
+        
+        if (!hasNumericIds && participations.length > 0) {
+          for (const p of participations) {
+            const { error } = await supabase
+              .from('event_participations')
+              .insert({
+                id: p.id,
+                callsign_id: p.callSignId,
+                date: p.date,
+                departure_airport: p.departureAirport,
+                arrival_airport: p.arrivalAirport,
+                is_approved: p.isApproved,
+                submitted_at: p.submittedAt,
+                approved_at: p.approvedAt
+              });
+            
+            if (error) throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error migrating event participations:", error);
+      }
+    }
+
+    // Migrate manual participation counts
+    const localCounts = localStorage.getItem("manualParticipationCounts");
+    if (localCounts) {
+      try {
+        const counts = JSON.parse(localCounts);
+        
+        // Check if the callsigns have numeric IDs, if so skip migration
+        const hasNumericIds = counts.some((c: any) => 
+          typeof c.callSignId === 'number' || /^\d+$/.test(c.callSignId)
+        );
+        
+        if (!hasNumericIds && counts.length > 0) {
+          for (const c of counts) {
+            const { error } = await supabase
+              .from('manual_participation_counts')
+              .insert({
+                id: c.id,
+                callsign_id: c.callSignId,
+                count: c.count,
+                updated_at: c.updatedAt
+              });
+            
+            if (error) throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error migrating manual participation counts:", error);
+      }
+    }
+
+    // Mark migration as completed
+    localStorage.setItem("supabaseMigrationCompleted", "true");
+  } catch (error) {
+    console.error("Error during migration:", error);
+  }
+
+  console.info("Migration completed.");
 };
