@@ -24,7 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useDatabase } from "@/context/DatabaseContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MilestonePopup from "@/components/MilestonePopup";
 
 const ApprovalPage = () => {
@@ -37,18 +37,35 @@ const ApprovalPage = () => {
 
   const pendingParticipations = getPendingParticipations();
 
+  // Add a debugging console log to check all callsigns and their current participation counts
+  useEffect(() => {
+    if (isAdmin) {
+      console.log("Current participation counts for debugging:");
+      pendingParticipations.forEach(participation => {
+        const callSignId = participation.callSignId;
+        const callSignCode = getCallSignCode(callSignId);
+        const count = getCallSignParticipationCount(callSignId);
+        console.log(`CallSign: ${callSignCode}, ID: ${callSignId}, Total Count: ${count}`);
+      });
+    }
+  }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount]);
+
   const handleApprove = async (eventId: string, callSignId: string) => {
     await approveEventParticipation(eventId);
     
     // Check if a milestone has been reached
     const callSignCode = getCallSignCode(callSignId);
     
-    // This now includes both approved events and manual counts
+    // This includes both approved events and manual counts
     const participationCount = getCallSignParticipationCount(callSignId);
     
-    // Check if the count is exactly one of the milestone values
+    console.log(`After approval: CallSign ${callSignCode} now has ${participationCount} total participations`);
+    
+    // Check if the count matches one of the milestone values
     const milestones = [20, 40, 60, 80, 100];
     const reachedMilestone = milestones.find(m => participationCount === m);
+    
+    console.log(`Checking milestone: ${reachedMilestone ? `Reached milestone ${reachedMilestone}` : 'No milestone reached'}`);
     
     if (reachedMilestone) {
       setMilestoneDetails({
