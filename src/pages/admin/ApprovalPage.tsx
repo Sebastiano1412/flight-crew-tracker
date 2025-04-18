@@ -42,6 +42,8 @@ const ApprovalPage = () => {
     
     // Check if a milestone has been reached
     const callSignCode = getCallSignCode(callSignId);
+    
+    // This now includes both approved events and manual counts
     const participationCount = getCallSignParticipationCount(callSignId);
     
     // Check if the count is exactly one of the milestone values
