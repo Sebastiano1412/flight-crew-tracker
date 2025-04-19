@@ -48,6 +48,9 @@ const ApprovalPage = () => {
 
   const pendingParticipations = getPendingParticipations();
 
+  // Define milestones including the new 10 participation milestone
+  const milestones = [10, 20, 40, 60, 80, 100];
+
   // Add a debugging console log to check all callsigns and their current participation counts
   useEffect(() => {
     if (isAdmin) {
@@ -66,48 +69,63 @@ const ApprovalPage = () => {
   }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount, getManualParticipationCount]);
 
   const handleApprove = async (eventId: string, callSignId: string) => {
-    // Get the count BEFORE approval to check if approval will trigger a milestone
-    const preApprovalCount = getCallSignParticipationCount(callSignId);
-    const callSignCode = getCallSignCode(callSignId);
-    console.log(`Before approval: CallSign ${callSignCode} has ${preApprovalCount} participations`);
-    
-    // Approve the participation
-    await approveEventParticipation(eventId);
-    
-    // Now get the updated count AFTER approval
-    const postApprovalCount = getCallSignParticipationCount(callSignId);
-    console.log(`After approval: CallSign ${callSignCode} now has ${postApprovalCount} participations`);
-    
-    // Check if the count matches one of the milestone values
-    const milestones = [20, 40, 60, 80, 100];
-    
-    // Check if any milestone was reached with this approval
-    for (const milestone of milestones) {
-      // If we crossed a milestone threshold with this approval
-      if (preApprovalCount < milestone && postApprovalCount >= milestone) {
-        console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
-        
-        // Force the milestone popup to open
-        setMilestoneDetails({
-          callSign: callSignCode,
-          milestone: milestone,
-          open: true
-        });
-        
-        // Show toast notification as well
-        toast({
-          title: "Traguardo raggiunto!",
-          description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
-        });
-        
-        break;  // Only show one milestone popup at a time
+    try {
+      // Get the count BEFORE approval to check if approval will trigger a milestone
+      const preApprovalCount = getCallSignParticipationCount(callSignId);
+      const callSignCode = getCallSignCode(callSignId);
+      console.log(`Before approval: CallSign ${callSignCode} has ${preApprovalCount} participations`);
+      
+      // Approve the participation
+      await approveEventParticipation(eventId);
+      
+      // Now get the updated count AFTER approval
+      const postApprovalCount = getCallSignParticipationCount(callSignId);
+      console.log(`After approval: CallSign ${callSignCode} now has ${postApprovalCount} participations`);
+      
+      // Check if any milestone was reached with this approval
+      for (const milestone of milestones) {
+        // If we crossed a milestone threshold with this approval
+        if (preApprovalCount < milestone && postApprovalCount >= milestone) {
+          console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
+          
+          // Show a toast notification
+          toast({
+            title: "Traguardo raggiunto!",
+            description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
+          });
+          
+          // Force the milestone popup to open with a slight delay to ensure state updates properly
+          setTimeout(() => {
+            console.log(`Setting milestone popup to open with: callSign=${callSignCode}, milestone=${milestone}`);
+            setMilestoneDetails({
+              callSign: callSignCode,
+              milestone: milestone,
+              open: true
+            });
+          }, 100);
+          
+          break;  // Only show one milestone popup at a time
+        }
       }
+    } catch (error) {
+      console.error("Error approving participation:", error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante l'approvazione",
+        variant: "destructive"
+      });
     }
   };
 
   const closeMilestonePopup = () => {
+    console.log("Closing milestone popup");
     setMilestoneDetails(prev => ({ ...prev, open: false }));
   };
+
+  useEffect(() => {
+    // Log whenever milestone details change
+    console.log("Milestone details changed:", milestoneDetails);
+  }, [milestoneDetails]);
 
   if (!isAdmin) {
     return <Navigate to="/admin" />;
@@ -234,13 +252,15 @@ const ApprovalPage = () => {
         </CardContent>
       </Card>
 
-      {/* Milestone popup */}
-      <MilestonePopup 
-        callSign={milestoneDetails.callSign}
-        milestone={milestoneDetails.milestone}
-        open={milestoneDetails.open}
-        onClose={closeMilestonePopup}
-      />
+      {/* Milestone popup - Rendered conditionally based on milestone details */}
+      {milestoneDetails.open && (
+        <MilestonePopup 
+          callSign={milestoneDetails.callSign}
+          milestone={milestoneDetails.milestone}
+          open={milestoneDetails.open}
+          onClose={closeMilestonePopup}
+        />
+      )}
     </div>
   );
 };

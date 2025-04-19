@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Award, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,17 @@ interface MilestonePopupProps {
 const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, open, onClose }) => {
   console.log(`MilestonePopup rendering with open=${open}, callSign=${callSign}, milestone=${milestone}`);
   
+  // Add an effect to log when props change
+  useEffect(() => {
+    console.log(`MilestonePopup useEffect triggered: open=${open}, callSign=${callSign}, milestone=${milestone}`);
+  }, [open, callSign, milestone]);
+
+  if (!open) {
+    return null;
+  }
+  
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-bold text-center">
