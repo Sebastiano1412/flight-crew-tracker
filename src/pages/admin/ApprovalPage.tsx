@@ -51,19 +51,24 @@ const ApprovalPage = () => {
   // Define milestones including the new 10 participation milestone
   const milestones = [10, 20, 40, 60, 80, 100];
 
-  // Add a debugging console log to check all callsigns and their current participation counts
+  // Debug current participation counts for all callsigns
   useEffect(() => {
     if (isAdmin) {
       console.log("Current participation counts for debugging:");
-      pendingParticipations.forEach(participation => {
-        const callSignId = participation.callSignId;
+      const uniqueCallSignIds = [...new Set(pendingParticipations.map(p => p.callSignId))];
+      
+      uniqueCallSignIds.forEach(callSignId => {
         const callSignCode = getCallSignCode(callSignId);
         const approvedCount = pendingParticipations.filter(
           p => p.callSignId === callSignId && p.isApproved
         ).length;
         const manualCount = getManualParticipationCount(callSignId);
         const totalCount = getCallSignParticipationCount(callSignId);
-        console.log(`CallSign: ${callSignCode}, ID: ${callSignId}, Approved Events: ${approvedCount}, Manual Count: ${manualCount}, Total Count: ${totalCount}`);
+        
+        console.log(`DETAILED COUNT - CallSign: ${callSignCode}, ID: ${callSignId}`);
+        console.log(`  Approved Events: ${approvedCount}`);
+        console.log(`  Manual Count: ${manualCount}`);
+        console.log(`  Total Count: ${totalCount}`);
       });
     }
   }, [isAdmin, pendingParticipations, getCallSignCode, getCallSignParticipationCount, getManualParticipationCount]);
@@ -73,40 +78,60 @@ const ApprovalPage = () => {
       // Get the count BEFORE approval to check if approval will trigger a milestone
       const preApprovalCount = getCallSignParticipationCount(callSignId);
       const callSignCode = getCallSignCode(callSignId);
-      console.log(`Before approval: CallSign ${callSignCode} has ${preApprovalCount} participations`);
+      
+      // Debug log pre-approval counts
+      const preApprovedEvents = pendingParticipations.filter(
+        p => p.callSignId === callSignId && p.isApproved
+      ).length;
+      const preManualCount = getManualParticipationCount(callSignId);
+      
+      console.log(`BEFORE APPROVAL - CallSign ${callSignCode}:`);
+      console.log(`  Pre-Approved Events: ${preApprovedEvents}`);
+      console.log(`  Pre-Manual Count: ${preManualCount}`);
+      console.log(`  Pre-Total Count: ${preApprovalCount}`);
       
       // Approve the participation
       await approveEventParticipation(eventId);
       
-      // Now get the updated count AFTER approval
-      const postApprovalCount = getCallSignParticipationCount(callSignId);
-      console.log(`After approval: CallSign ${callSignCode} now has ${postApprovalCount} participations`);
-      
-      // Check if any milestone was reached with this approval
-      for (const milestone of milestones) {
-        // If we crossed a milestone threshold with this approval
-        if (preApprovalCount < milestone && postApprovalCount >= milestone) {
-          console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
-          
-          // Show a toast notification
-          toast({
-            title: "Traguardo raggiunto!",
-            description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
-          });
-          
-          // Force the milestone popup to open with a slight delay to ensure state updates properly
-          setTimeout(() => {
-            console.log(`Setting milestone popup to open with: callSign=${callSignCode}, milestone=${milestone}`);
+      // Force a small delay to ensure state updates
+      setTimeout(() => {
+        // Now get the updated count AFTER approval
+        const postApprovalCount = getCallSignParticipationCount(callSignId);
+        
+        // Debug log post-approval counts
+        const postApprovedEvents = pendingParticipations.filter(
+          p => p.callSignId === callSignId && p.isApproved
+        ).length + 1; // Add 1 for the one we just approved
+        const postManualCount = getManualParticipationCount(callSignId);
+        
+        console.log(`AFTER APPROVAL - CallSign ${callSignCode}:`);
+        console.log(`  Post-Approved Events: ${postApprovedEvents}`);
+        console.log(`  Post-Manual Count: ${postManualCount}`);
+        console.log(`  Post-Total Count: ${postApprovalCount}`);
+        
+        // Check if any milestone was reached with this approval
+        for (const milestone of milestones) {
+          // If we crossed a milestone threshold with this approval
+          if (preApprovalCount < milestone && postApprovalCount >= milestone) {
+            console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
+            
+            // Show a toast notification
+            toast({
+              title: "Traguardo raggiunto!",
+              description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
+            });
+            
+            // Set milestone popup to open
             setMilestoneDetails({
               callSign: callSignCode,
               milestone: milestone,
               open: true
             });
-          }, 100);
-          
-          break;  // Only show one milestone popup at a time
+            
+            break;  // Only show one milestone popup at a time
+          }
         }
-      }
+      }, 300); // Small delay to ensure state is updated
     } catch (error) {
       console.error("Error approving participation:", error);
       toast({
@@ -252,15 +277,13 @@ const ApprovalPage = () => {
         </CardContent>
       </Card>
 
-      {/* Milestone popup - Rendered conditionally based on milestone details */}
-      {milestoneDetails.open && (
-        <MilestonePopup 
-          callSign={milestoneDetails.callSign}
-          milestone={milestoneDetails.milestone}
-          open={milestoneDetails.open}
-          onClose={closeMilestonePopup}
-        />
-      )}
+      {/* Milestone popup - only render when open is true */}
+      <MilestonePopup 
+        callSign={milestoneDetails.callSign}
+        milestone={milestoneDetails.milestone}
+        open={milestoneDetails.open}
+        onClose={closeMilestonePopup}
+      />
     </div>
   );
 };
