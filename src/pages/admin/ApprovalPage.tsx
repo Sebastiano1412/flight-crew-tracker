@@ -87,16 +87,19 @@ const ApprovalPage = () => {
       // Approve the participation
       await approveEventParticipation(eventId);
       
-      // Use a longer timeout to ensure state is updated
+      // Force a state update and check for milestone
       setTimeout(() => {
         // Get updated count AFTER approval
         const postApprovalCount = getCallSignParticipationCount(callSignId);
         
         console.log(`AFTER APPROVAL - CallSign ${callSignCode}:`);
         console.log(`  Post-Total Count: ${postApprovalCount}`);
+        console.log(`  Checking if milestone reached...`);
         
         // Check if any milestone was reached
         for (const milestone of milestones) {
+          console.log(`  Checking milestone ${milestone}: ${preApprovalCount} < ${milestone} && ${postApprovalCount} >= ${milestone}`);
+          
           // If we crossed a milestone threshold
           if (preApprovalCount < milestone && postApprovalCount >= milestone) {
             console.log(`!!! MILESTONE REACHED !!! CallSign ${callSignCode} reached ${milestone} participations`);
@@ -107,19 +110,21 @@ const ApprovalPage = () => {
               description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
             });
             
-            // Open milestone popup
+            // Force setting milestone popup to open with explicit values
             console.log(`Setting milestone popup to open for ${callSignCode} with milestone ${milestone}`);
             
+            // Use a callback form of setState to ensure we're not depending on potentially stale state
             setMilestoneDetails({
               callSign: callSignCode,
               milestone: milestone,
               open: true
             });
             
+            console.log("Milestone popup should now be visible");
             break; // Only show one milestone popup at a time
           }
         }
-      }, 1000); // Increased delay to ensure database state is fully updated
+      }, 1500); // Increased delay to ensure database state is fully updated
     } catch (error) {
       console.error("Error approving participation:", error);
       toast({
@@ -143,6 +148,8 @@ const ApprovalPage = () => {
   if (!isAdmin) {
     return <Navigate to="/admin" />;
   }
+
+  console.log("Rendering ApprovalPage with milestone popup:", milestoneDetails);
 
   return (
     <div className="space-y-6">
@@ -265,7 +272,8 @@ const ApprovalPage = () => {
         </CardContent>
       </Card>
 
-      {/* Milestone Popup with true force rendering */}
+      {/* Milestone Popup rendering unconditionally */}
+      {console.log("About to render MilestonePopup with:", milestoneDetails)}
       <MilestonePopup 
         callSign={milestoneDetails.callSign}
         milestone={milestoneDetails.milestone}

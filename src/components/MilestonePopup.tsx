@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Award, X } from "lucide-react";
+import { Award } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -21,14 +21,15 @@ const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, op
     }
   }, [open]);
 
+  if (!open) {
+    return null; // Don't render anything if not open
+  }
+
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(isOpen) => {
-        console.log(`Dialog onOpenChange called with isOpen=${isOpen}`);
-        if (!isOpen) onClose();
-      }}
-    >
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      console.log(`Dialog onOpenChange called with isOpen=${isOpen}`);
+      if (!isOpen) onClose();
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-bold text-center">
