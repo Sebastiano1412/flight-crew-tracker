@@ -48,7 +48,7 @@ const ApprovalPage = () => {
 
   const pendingParticipations = getPendingParticipations();
 
-  // Define milestones including the new 10 participation milestone
+  // Define milestones including the 10 participation milestone
   const milestones = [10, 20, 40, 60, 80, 100];
 
   // Debug current participation counts for all callsigns
@@ -80,40 +80,26 @@ const ApprovalPage = () => {
       const callSignCode = getCallSignCode(callSignId);
       
       // Debug log pre-approval counts
-      const preApprovedEvents = pendingParticipations.filter(
-        p => p.callSignId === callSignId && p.isApproved
-      ).length;
-      const preManualCount = getManualParticipationCount(callSignId);
-      
       console.log(`BEFORE APPROVAL - CallSign ${callSignCode}:`);
-      console.log(`  Pre-Approved Events: ${preApprovedEvents}`);
-      console.log(`  Pre-Manual Count: ${preManualCount}`);
       console.log(`  Pre-Total Count: ${preApprovalCount}`);
       
       // Approve the participation
       await approveEventParticipation(eventId);
       
-      // Force a small delay to ensure state updates
+      // Wait for state to update before checking for milestone achievement
+      // Using a longer delay to ensure database state is fully updated
       setTimeout(() => {
-        // Now get the updated count AFTER approval
+        // Get the updated count AFTER approval
         const postApprovalCount = getCallSignParticipationCount(callSignId);
         
-        // Debug log post-approval counts
-        const postApprovedEvents = pendingParticipations.filter(
-          p => p.callSignId === callSignId && p.isApproved
-        ).length + 1; // Add 1 for the one we just approved
-        const postManualCount = getManualParticipationCount(callSignId);
-        
         console.log(`AFTER APPROVAL - CallSign ${callSignCode}:`);
-        console.log(`  Post-Approved Events: ${postApprovedEvents}`);
-        console.log(`  Post-Manual Count: ${postManualCount}`);
         console.log(`  Post-Total Count: ${postApprovalCount}`);
         
         // Check if any milestone was reached with this approval
         for (const milestone of milestones) {
           // If we crossed a milestone threshold with this approval
           if (preApprovalCount < milestone && postApprovalCount >= milestone) {
-            console.log(`MILESTONE REACHED: CallSign ${callSignCode} reached ${milestone} participations`);
+            console.log(`!!! MILESTONE REACHED !!! CallSign ${callSignCode} reached ${milestone} participations`);
             
             // Show a toast notification
             toast({
@@ -121,17 +107,20 @@ const ApprovalPage = () => {
               description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
             });
             
-            // Set milestone popup to open
-            setMilestoneDetails({
-              callSign: callSignCode,
-              milestone: milestone,
-              open: true
-            });
+            // Set milestone popup to open with a delay to ensure state is updated
+            setTimeout(() => {
+              console.log(`Opening milestone popup for ${callSignCode} with milestone ${milestone}`);
+              setMilestoneDetails({
+                callSign: callSignCode,
+                milestone: milestone,
+                open: true
+              });
+            }, 100);
             
             break;  // Only show one milestone popup at a time
           }
         }
-      }, 300); // Small delay to ensure state is updated
+      }, 500); // Increased delay to ensure database state is fully updated
     } catch (error) {
       console.error("Error approving participation:", error);
       toast({
@@ -277,7 +266,7 @@ const ApprovalPage = () => {
         </CardContent>
       </Card>
 
-      {/* Milestone popup - only render when open is true */}
+      {/* Standalone Milestone Popup */}
       <MilestonePopup 
         callSign={milestoneDetails.callSign}
         milestone={milestoneDetails.milestone}

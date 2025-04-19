@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Award, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,22 @@ interface MilestonePopupProps {
 const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, open, onClose }) => {
   console.log(`MilestonePopup render with open=${open}, callSign=${callSign}, milestone=${milestone}`);
   
-  // Don't return null when closed, let Dialog handle the visibility
+  // Force focus when opened
+  useEffect(() => {
+    if (open) {
+      console.log("MilestonePopup is now open!");
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) onClose();
-    }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(isOpen) => {
+        console.log(`Dialog onOpenChange called with isOpen=${isOpen}`);
+        if (!isOpen) onClose();
+      }}
+      modal={true}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-bold text-center">
@@ -28,7 +39,10 @@ const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, op
           <Button
             variant="ghost"
             size="sm"
-            onClick={onClose}
+            onClick={() => {
+              console.log("Close button clicked");
+              onClose();
+            }}
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
           >
             <X className="h-4 w-4" />
@@ -48,7 +62,13 @@ const MilestonePopup: React.FC<MilestonePopupProps> = ({ callSign, milestone, op
           </p>
         </div>
         <div className="flex justify-center">
-          <Button onClick={onClose} className="px-8">
+          <Button 
+            onClick={() => {
+              console.log("Confirm button clicked");
+              onClose();
+            }} 
+            className="px-8"
+          >
             Conferma
           </Button>
         </div>
