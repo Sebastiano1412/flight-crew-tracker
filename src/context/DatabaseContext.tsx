@@ -12,7 +12,7 @@ interface DatabaseContextType {
   updateCallSign: (id: string, code: string, isActive: boolean) => Promise<void>;
   deleteCallSign: (id: string) => Promise<void>;
   addEventParticipation: (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => Promise<void>;
-  approveEventParticipation: (id: string) => Promise<void>;
+  approveEventParticipation: (id: string, showToast?: boolean) => Promise<void>;
   editEventParticipation: (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => Promise<void>;
   deleteEventParticipation: (id: string) => Promise<void>;
   getCallSignById: (id: string) => CallSign | undefined;
@@ -223,7 +223,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const approveEventParticipation = async (id: string) => {
+  const approveEventParticipation = async (id: string, showToast = true) => {
     try {
       const now = new Date().toISOString();
       
@@ -244,7 +244,9 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         )
       }));
 
-      toast.success("Partecipazione all'evento approvata");
+      if (showToast) {
+        toast.success("Partecipazione all'evento approvata");
+      }
     } catch (error) {
       console.error('Error approving event participation:', error);
       toast.error('Errore nell\'approvazione della partecipazione');

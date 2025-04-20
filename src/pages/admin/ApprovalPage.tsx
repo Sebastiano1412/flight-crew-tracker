@@ -1,3 +1,4 @@
+
 import { Navigate } from "react-router-dom";
 import { CheckCircle, XCircle, Calendar, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,12 +79,13 @@ const ApprovalPage = () => {
       const callSignCode = getCallSignCode(callSignId);
       
       // Approve the participation
-      await approveEventParticipation(eventId);
+      // Pass false to prevent the default toast in the context function
+      await approveEventParticipation(eventId, false);
       
       // Get the updated participation count after approval
       const totalCount = getCallSignParticipationCount(callSignId);
       
-      // Show toast with the updated count
+      // Show our custom toast with the updated count
       toast({
         title: "Partecipazione approvata",
         description: `${callSignCode} ha ora ${totalCount} partecipazion${totalCount === 1 ? 'e' : 'i'} totali`,
