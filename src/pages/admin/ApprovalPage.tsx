@@ -78,14 +78,17 @@ const ApprovalPage = () => {
       // Get the current callsign code
       const callSignCode = getCallSignCode(callSignId);
       
+      // First get the count before approval to calculate the correct count after approval
+      const countBeforeApproval = getCallSignParticipationCount(callSignId);
+      
       // Approve the participation
       // Pass false to prevent the default toast in the context function
       await approveEventParticipation(eventId, false);
       
-      // Get the updated participation count after approval
-      const totalCount = getCallSignParticipationCount(callSignId);
+      // Calculate the total count after approval (add 1 to previous count)
+      const totalCount = countBeforeApproval + 1;
       
-      // Show our custom toast with the updated count
+      // Show our custom toast with the correct updated count
       toast({
         title: "Partecipazione approvata",
         description: `${callSignCode} ha ora ${totalCount} partecipazion${totalCount === 1 ? 'e' : 'i'} totali`,
