@@ -85,7 +85,8 @@ const ApprovalPage = () => {
       // Pass false to prevent the default toast in the context function
       await approveEventParticipation(eventId, false);
       
-      // Calculate the total count after approval (add 1 to previous count)
+      // We need to update the local data to reflect the change immediately for the correct count
+      // Since we're preventing the default toast, let's manually update the count in this component
       const totalCount = countBeforeApproval + 1;
       
       // Show our custom toast with the correct updated count
