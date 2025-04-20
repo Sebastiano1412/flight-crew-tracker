@@ -1,4 +1,3 @@
-
 import { Navigate } from "react-router-dom";
 import { CheckCircle, XCircle, Calendar, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,9 +23,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useDatabase } from "@/context/DatabaseContext";
+import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import MilestonePopup from "@/components/MilestonePopup";
-import { useToast } from "@/hooks/use-toast";
 
 const ApprovalPage = () => {
   const { toast } = useToast();
@@ -39,7 +38,7 @@ const ApprovalPage = () => {
     getCallSignParticipationCount,
     getManualParticipationCount
   } = useDatabase();
-  
+
   const [milestoneDetails, setMilestoneDetails] = useState<{ callSign: string; milestone: number; open: boolean }>({
     callSign: "",
     milestone: 0,
@@ -78,53 +77,18 @@ const ApprovalPage = () => {
       // Get the current callsign code
       const callSignCode = getCallSignCode(callSignId);
       
-      // Get the count BEFORE approval
-      const preApprovalCount = getCallSignParticipationCount(callSignId);
-      
-      console.log(`BEFORE APPROVAL - CallSign ${callSignCode}:`);
-      console.log(`  Pre-Total Count: ${preApprovalCount}`);
-      
       // Approve the participation
       await approveEventParticipation(eventId);
       
-      // Force a state update and check for milestone
-      setTimeout(() => {
-        // Get updated count AFTER approval
-        const postApprovalCount = getCallSignParticipationCount(callSignId);
-        
-        console.log(`AFTER APPROVAL - CallSign ${callSignCode}:`);
-        console.log(`  Post-Total Count: ${postApprovalCount}`);
-        console.log(`  Checking if milestone reached...`);
-        
-        // Check if any milestone was reached
-        for (const milestone of milestones) {
-          console.log(`  Checking milestone ${milestone}: ${preApprovalCount} < ${milestone} && ${postApprovalCount} >= ${milestone}`);
-          
-          // If we crossed a milestone threshold
-          if (preApprovalCount < milestone && postApprovalCount >= milestone) {
-            console.log(`!!! MILESTONE REACHED !!! CallSign ${callSignCode} reached ${milestone} participations`);
-            
-            // Show toast notification
-            toast({
-              title: "Traguardo raggiunto!",
-              description: `${callSignCode} ha raggiunto ${milestone} partecipazioni!`,
-            });
-            
-            // Force setting milestone popup to open with explicit values
-            console.log(`Setting milestone popup to open for ${callSignCode} with milestone ${milestone}`);
-            
-            // Use a callback form of setState to ensure we're not depending on potentially stale state
-            setMilestoneDetails({
-              callSign: callSignCode,
-              milestone: milestone,
-              open: true
-            });
-            
-            console.log("Milestone popup should now be visible");
-            break; // Only show one milestone popup at a time
-          }
-        }
-      }, 1500); // Increased delay to ensure database state is fully updated
+      // Get the updated participation count after approval
+      const totalCount = getCallSignParticipationCount(callSignId);
+      
+      // Show toast with the updated count
+      toast({
+        title: "Partecipazione approvata",
+        description: `${callSignCode} ha ora ${totalCount} partecipazion${totalCount === 1 ? 'e' : 'i'} totali`,
+      });
+
     } catch (error) {
       console.error("Error approving participation:", error);
       toast({
@@ -148,8 +112,6 @@ const ApprovalPage = () => {
   if (!isAdmin) {
     return <Navigate to="/admin" />;
   }
-
-  console.log("Rendering ApprovalPage with milestone popup:", milestoneDetails);
 
   return (
     <div className="space-y-6">
