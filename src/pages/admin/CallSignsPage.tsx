@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -242,7 +241,9 @@ const CallSignsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {database.callSigns.map((callSign) => {
+              {database.callSigns
+                .sort((a, b) => a.code.localeCompare(b.code))
+                .map((callSign) => {
                 const approvedCount = database.eventParticipations.filter(
                   ep => ep.callSignId === callSign.id && ep.isApproved
                 ).length;

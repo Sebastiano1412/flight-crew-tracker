@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -56,7 +55,7 @@ const formSchema = z.object({
 const ReportPage = () => {
   const { addEventParticipation, getActiveCallSigns } = useDatabase();
   const navigate = useNavigate();
-  const activeCallSigns = getActiveCallSigns();
+  const activeCallSigns = getActiveCallSigns().sort((a, b) => a.code.localeCompare(b.code));
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
