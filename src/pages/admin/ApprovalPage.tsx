@@ -273,7 +273,7 @@ const ApprovalPage = () => {
       </Card>
 
       {/* Milestone Popup rendering unconditionally */}
-      {console.log("About to render MilestonePopup with:", milestoneDetails)}
+      {/* Remove the console.log here as it causes a TypeScript error */}
       <MilestonePopup 
         callSign={milestoneDetails.callSign}
         milestone={milestoneDetails.milestone}
