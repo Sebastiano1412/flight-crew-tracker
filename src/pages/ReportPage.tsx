@@ -56,6 +56,7 @@ const ReportPage = () => {
   const { addEventParticipation, getActiveCallSigns } = useDatabase();
   const navigate = useNavigate();
   const activeCallSigns = getActiveCallSigns().sort((a, b) => a.code.localeCompare(b.code));
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -127,7 +128,10 @@ const ReportPage = () => {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data Evento</FormLabel>
-                    <Popover>
+                    <Popover
+                      open={isDatePopoverOpen}
+                      onOpenChange={setIsDatePopoverOpen}
+                    >
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -136,6 +140,7 @@ const ReportPage = () => {
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
+                            onClick={() => setIsDatePopoverOpen(true)}
                           >
                             {field.value ? (
                               format(field.value, "PPP")
@@ -150,7 +155,10 @@ const ReportPage = () => {
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            if (date) setIsDatePopoverOpen(false);
+                          }}
                           initialFocus
                           className={cn("p-3 pointer-events-auto")}
                         />
