@@ -165,23 +165,35 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteCallSign = async (id: string) => {
     try {
+      const { error: eventError } = await supabase
+        .from('event_participations')
+        .delete()
+        .eq('callsign_id', id);
+      if (eventError) throw eventError;
+
+      const { error: manualError } = await supabase
+        .from('manual_participation_counts')
+        .delete()
+        .eq('callsign_id', id);
+      if (manualError) throw manualError;
+
       const { error } = await supabase
         .from('callsigns')
         .delete()
         .eq('id', id);
-      
       if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
         callSigns: prev.callSigns.filter(cs => cs.id !== id),
+        eventParticipations: prev.eventParticipations.filter(ep => ep.callSignId !== id),
         manualParticipationCounts: prev.manualParticipationCounts.filter(mpc => mpc.callSignId !== id)
       }));
 
-      toast.success("Callsign eliminato con successo");
+      toast.success("Callsign eliminato con successo e tutte le partecipazioni associate sono state rimosse");
     } catch (error) {
-      console.error('Error deleting callsign:', error);
-      toast.error('Errore nell\'eliminazione del callsign');
+      console.error('Error deleting callsign and associated records:', error);
+      toast.error('Errore nell\'eliminazione del callsign e delle partecipazioni associate');
     }
   };
 
