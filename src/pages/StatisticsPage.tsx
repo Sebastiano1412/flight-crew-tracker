@@ -57,12 +57,12 @@ const StatisticsPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Eventi Totali</CardTitle>
+            <CardTitle className="text-xl font-bold">Partecipazioni Inviate</CardTitle>
             <Plane className="h-5 w-5 text-airline-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalParticipations}</div>
-            <CardDescription>Partecipazioni totali (incluse manuali)</CardDescription>
+            <CardDescription>Partecipazioni inviate in totale</CardDescription>
           </CardContent>
         </Card>
 
