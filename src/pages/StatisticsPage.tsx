@@ -1,4 +1,3 @@
-
 import { LineChart, Users, Plane } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +17,12 @@ const StatisticsPage = () => {
   const activeCallSigns = database.callSigns.filter(cs => cs.isActive);
   const approvedParticipations = database.eventParticipations.filter(ep => ep.isApproved);
   const pendingParticipations = database.eventParticipations.filter(ep => !ep.isApproved);
+
+  // Calculate total manual participations
+  const totalManualParticipations = database.manualParticipationCounts.reduce((sum, mpc) => sum + mpc.count, 0);
+  
+  // Total approved participations including manual counts
+  const totalParticipations = approvedParticipations.length + totalManualParticipations;
 
   // Sort callsigns by participation count (descending)
   const sortedCallSigns = [...activeCallSigns].sort((a, b) => {
@@ -56,8 +61,8 @@ const StatisticsPage = () => {
             <Plane className="h-5 w-5 text-airline-blue" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{approvedParticipations.length}</div>
-            <CardDescription>Partecipazioni approvate</CardDescription>
+            <div className="text-3xl font-bold">{totalParticipations}</div>
+            <CardDescription>Partecipazioni totali (incluse manuali)</CardDescription>
           </CardContent>
         </Card>
 
