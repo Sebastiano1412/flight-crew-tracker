@@ -48,7 +48,7 @@ const Home = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Eventi Totali</CardTitle>
+            <CardTitle className="text-xl font-bold">Report Totali</CardTitle>
             <Calendar className="h-6 w-6 text-airline-blue" />
           </CardHeader>
           <CardContent>
