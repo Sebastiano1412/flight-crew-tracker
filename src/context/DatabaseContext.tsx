@@ -4,9 +4,6 @@ import { toast } from 'sonner';
 import { mysqlClient, initializePool } from "../utils/mysqlClient";
 import { v4 as uuidv4 } from 'uuid';
 
-// Aggiungiamo uuid come dipendenza
-<lov-add-dependency>uuid@latest</lov-add-dependency>
-
 interface DatabaseContextType {
   database: DatabaseConfig;
   isAdmin: boolean;
@@ -44,7 +41,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Inizializza il database
-  const initializeDatabase = async () => {
+  const initializeDatabase = async (): Promise<void> => {
     try {
       // Inizializza la connessione al database
       await initializePool();
@@ -56,11 +53,10 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
       await loadData();
       
       setIsConnected(true);
-      return true;
     } catch (error) {
       console.error('Errore nell\'inizializzazione del database:', error);
       setIsConnected(false);
-      return false;
+      throw error;
     }
   };
 
@@ -417,7 +413,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     return manualCount ? manualCount.count : 0;
   };
 
-  const value = {
+  const value: DatabaseContextType = {
     database,
     isAdmin,
     isConnected,
