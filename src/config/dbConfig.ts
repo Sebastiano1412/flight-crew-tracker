@@ -1,4 +1,3 @@
-
 interface MySQLConfig {
   host: string;
   user: string;
@@ -7,7 +6,7 @@ interface MySQLConfig {
   port: number;
 }
 
-// Valori di default che possono essere sovrascritti
+// Default values that can be overridden
 const defaultConfig: MySQLConfig = {
   host: 'localhost',
   user: 'root',
@@ -16,24 +15,24 @@ const defaultConfig: MySQLConfig = {
   port: 3306
 };
 
-// Esporta una funzione che permette di impostare la configurazione
+// Export a function that allows setting the configuration
 let currentConfig = { ...defaultConfig };
 
 export const setDatabaseConfig = (config: Partial<MySQLConfig>): void => {
   currentConfig = { ...currentConfig, ...config };
-  // Salva la configurazione in localStorage per mantenerla tra le sessioni
+  // Save configuration in localStorage to keep it between sessions
   localStorage.setItem('mysql_config', JSON.stringify(currentConfig));
 };
 
 export const getDatabaseConfig = (): MySQLConfig => {
-  // Recupera la configurazione da localStorage se presente
+  // Get configuration from localStorage if present
   const savedConfig = localStorage.getItem('mysql_config');
   if (savedConfig) {
     try {
       const parsedConfig = JSON.parse(savedConfig);
       return { ...currentConfig, ...parsedConfig };
     } catch (e) {
-      console.error('Errore nel parsing della configurazione salvata:', e);
+      console.error('Error parsing saved configuration:', e);
     }
   }
   return currentConfig;

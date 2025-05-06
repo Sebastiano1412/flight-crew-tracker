@@ -40,21 +40,21 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  // Inizializza il database
+  // Initialize the database
   const initializeDatabase = async (): Promise<void> => {
     try {
-      // Inizializza la connessione al database
+      // Initialize database connection
       await initializePool();
       
-      // Configura le tabelle se non esistono
+      // Set up tables if they don't exist
       await mysqlClient.setupDatabase();
       
-      // Carica i dati
+      // Load data
       await loadData();
       
       setIsConnected(true);
     } catch (error) {
-      console.error('Errore nell\'inizializzazione del database:', error);
+      console.error('Error initializing database:', error);
       setIsConnected(false);
       throw error;
     }
@@ -66,22 +66,22 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const loadData = async () => {
     try {
-      // Carica i callsigns
+      // Load callsigns
       const callSigns = await mysqlClient.executeQuery<any>(
         'SELECT * FROM callsigns'
       );
       
-      // Carica le partecipazioni agli eventi
+      // Load event participations
       const eventParticipations = await mysqlClient.executeQuery<any>(
         'SELECT * FROM event_participations'
       );
       
-      // Carica i conteggi manuali
+      // Load manual counts
       const manualCounts = await mysqlClient.executeQuery<any>(
         'SELECT * FROM manual_participation_counts'
       );
 
-      // Formatta i dati nel formato atteso dall'app
+      // Format data as expected by the app
       const formattedCallSigns = callSigns.map((cs: any) => ({
         id: cs.id,
         code: cs.code,
@@ -114,8 +114,8 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       setIsLoaded(true);
     } catch (error) {
-      console.error('Errore nel caricamento dei dati da MySQL:', error);
-      toast.error('Errore nel caricamento dei dati');
+      console.error('Error loading data from mock MySQL:', error);
+      toast.error('Error loading data');
     }
   };
 

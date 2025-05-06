@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
 
 const DatabaseConfigPage = () => {
   const config = getDatabaseConfig();
@@ -21,13 +21,14 @@ const DatabaseConfigPage = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Validazione dei campi
+      // Validate fields
       if (!host || !user || !database) {
-        toast.error("I campi host, utente e database sono obbligatori");
+        toast.error("Host, user, and database fields are required");
+        setIsLoading(false);
         return;
       }
 
-      // Salva la configurazione
+      // Save configuration
       setDatabaseConfig({
         host,
         port: parseInt(port) || 3306,
@@ -36,18 +37,18 @@ const DatabaseConfigPage = () => {
         database,
       });
 
-      // Prova a connettersi con la nuova configurazione
+      // Attempt to connect with new configuration
       await initializePool();
       
-      toast.success("Configurazione salvata e connessione riuscita!");
+      toast.success("Configuration saved and connection successful!");
       
-      // Ricarica la pagina per applicare la nuova configurazione
+      // Reload the page to apply the new configuration
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (error) {
-      console.error("Errore durante il test della connessione:", error);
-      toast.error("Errore di connessione al database. Verifica le credenziali.");
+      console.error("Error testing connection:", error);
+      toast.error("Error connecting to database. Please verify credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -57,10 +58,10 @@ const DatabaseConfigPage = () => {
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-airline-blue mb-4">
-          Configurazione Database MySQL
+          MySQL Database Configuration
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Inserisci i dettagli di connessione al tuo database MySQL
+          Enter your MySQL database connection details
         </p>
       </div>
 
@@ -68,13 +69,23 @@ const DatabaseConfigPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="mr-2 h-5 w-5" />
-            Configurazione MySQL
+            MySQL Configuration
           </CardTitle>
           <CardDescription>
-            Inserisci le informazioni per connetterti al tuo database MySQL
+            Enter information to connect to your MySQL database
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
+            <div className="flex">
+              <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
+              <p className="text-sm text-amber-800">
+                Note: This app is using a browser-compatible mock implementation of MySQL. 
+                Your data will be stored in the browser's localStorage instead of an actual MySQL server.
+              </p>
+            </div>
+          </div>
+          
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -87,7 +98,7 @@ const DatabaseConfigPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="port">Porta</Label>
+                <Label htmlFor="port">Port</Label>
                 <Input 
                   id="port" 
                   value={port} 
@@ -98,7 +109,7 @@ const DatabaseConfigPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="database">Nome Database</Label>
+              <Label htmlFor="database">Database Name</Label>
               <Input 
                 id="database" 
                 value={database} 
@@ -108,7 +119,7 @@ const DatabaseConfigPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="user">Utente</Label>
+              <Label htmlFor="user">User</Label>
               <Input 
                 id="user" 
                 value={user} 
@@ -133,7 +144,7 @@ const DatabaseConfigPage = () => {
               onClick={handleSave} 
               disabled={isLoading}
             >
-              {isLoading ? "Connessione..." : "Salva Configurazione"}
+              {isLoading ? "Connecting..." : "Save Configuration"}
             </Button>
           </div>
         </CardContent>
