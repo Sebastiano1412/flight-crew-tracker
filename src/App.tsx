@@ -1,105 +1,60 @@
 
-import { useEffect, useState } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
+import { DatabaseProvider } from "./context/DatabaseContext";
+import { useEffect } from "react";
+import { migrateLocalStorageToSupabase } from "./utils/migrateInitialData";
+
+// Pages
 import Home from "./pages/Home";
 import ReportPage from "./pages/ReportPage";
 import StatisticsPage from "./pages/StatisticsPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
-import ApprovalPage from "./pages/admin/ApprovalPage";
 import CallSignsPage from "./pages/admin/CallSignsPage";
+import ApprovalPage from "./pages/admin/ApprovalPage";
 import EventsPage from "./pages/admin/EventsPage";
 import NotFound from "./pages/NotFound";
-import { useDatabase } from "./context/DatabaseContext";
-import DatabaseConfigPage from "./pages/DatabaseConfigPage";
-import { toast } from "sonner";
 
-function App() {
-  const { isAdmin, isConnected, initializeDatabase } = useDatabase();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isInitializing, setIsInitializing] = useState(true);
+const queryClient = new QueryClient();
 
-  // Reindirizza alla pagina di configurazione del database se non c'è connessione
+const AppContent = () => {
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        await initializeDatabase();
-        setIsInitializing(false);
-      } catch (error) {
-        setIsInitializing(false);
-        if (location.pathname !== "/db-config") {
-          toast.error("Impossibile connettersi al database. Configura la connessione.");
-          navigate("/db-config");
-        }
-      }
-    };
-    
-    checkConnection();
-  }, [initializeDatabase, navigate, location.pathname]);
-
-  // Proteggi le rotte admin
-  const checkAdmin = () => {
-    if (!isAdmin) {
-      toast.error("Accesso non autorizzato");
-      navigate("/admin-login");
-      return false;
-    }
-    return true;
-  };
-
-  if (isInitializing) {
-    return <div className="flex items-center justify-center h-screen">Inizializzazione database...</div>;
-  }
+    // Migrate data from localStorage to Supabase on first load
+    migrateLocalStorageToSupabase();
+  }, []);
 
   return (
     <Layout>
       <Routes>
-        <Route 
-          path="/" 
-          element={
-            !isConnected && location.pathname !== "/db-config" ? (
-              <DatabaseConfigPage />
-            ) : (
-              <Home />
-            )
-          } 
-        />
+        <Route path="/" element={<Home />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="/statistics" element={<StatisticsPage />} />
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/db-config" element={<DatabaseConfigPage />} />
-        
-        {/* Rotte protette */}
-        <Route 
-          path="/admin" 
-          element={
-            isAdmin ? <ApprovalPage /> : <AdminLoginPage />
-          } 
-        />
-        <Route 
-          path="/admin/approvals" 
-          element={
-            isAdmin ? <ApprovalPage /> : <AdminLoginPage />
-          } 
-        />
-        <Route 
-          path="/admin/callsigns" 
-          element={
-            isAdmin ? <CallSignsPage /> : <AdminLoginPage />
-          } 
-        />
-        <Route 
-          path="/admin/events" 
-          element={
-            isAdmin ? <EventsPage /> : <AdminLoginPage />
-          } 
-        />
-        
+        <Route path="/admin" element={<AdminLoginPage />} />
+        <Route path="/admin/callsigns" element={<CallSignsPage />} />
+        <Route path="/admin/approve" element={<ApprovalPage />} />
+        <Route path="/admin/events" element={<EventsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   );
-}
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <DatabaseProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </DatabaseProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

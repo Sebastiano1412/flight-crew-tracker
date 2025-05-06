@@ -1,8 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { DatabaseConfig, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
-import { mysqlClient, initializePool } from "../utils/mysqlClient";
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
 
 interface DatabaseContextType {
   database: DatabaseConfig;
@@ -24,8 +23,6 @@ interface DatabaseContextType {
   getCallSignParticipationCount: (callSignId: string) => number;
   updateManualParticipationCount: (callSignId: string, count: number) => Promise<void>;
   getManualParticipationCount: (callSignId: string) => number;
-  initializeDatabase: () => Promise<void>;
-  isConnected: boolean;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
@@ -38,86 +35,67 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-
-  // Initialize the database
-  const initializeDatabase = async (): Promise<void> => {
-    try {
-      // Initialize database connection
-      await initializePool();
-      
-      // Set up tables if they don't exist
-      await mysqlClient.setupDatabase();
-      
-      // Load data
-      await loadData();
-      
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Error initializing database:', error);
-      setIsConnected(false);
-      throw error;
-    }
-  };
 
   useEffect(() => {
-    initializeDatabase();
+    const loadData = async () => {
+      try {
+        const { data: callSigns, error: callSignsError } = await supabase
+          .from('callsigns')
+          .select('*');
+        
+        if (callSignsError) throw callSignsError;
+        
+        const { data: eventParticipations, error: participationsError } = await supabase
+          .from('event_participations')
+          .select('*');
+        
+        if (participationsError) throw participationsError;
+        
+        const { data: manualCounts, error: countsError } = await supabase
+          .from('manual_participation_counts')
+          .select('*');
+        
+        if (countsError) throw countsError;
+
+        const formattedCallSigns = callSigns.map(cs => ({
+          id: cs.id,
+          code: cs.code,
+          isActive: cs.is_active
+        }));
+
+        const formattedParticipations = eventParticipations.map(ep => ({
+          id: ep.id,
+          callSignId: ep.callsign_id,
+          date: ep.date,
+          departureAirport: ep.departure_airport,
+          arrivalAirport: ep.arrival_airport,
+          isApproved: ep.is_approved,
+          submittedAt: ep.submitted_at,
+          approvedAt: ep.approved_at
+        }));
+
+        const formattedCounts = manualCounts.map(mc => ({
+          id: mc.id,
+          callSignId: mc.callsign_id,
+          count: mc.count,
+          updatedAt: mc.updated_at
+        }));
+
+        setDatabase({
+          callSigns: formattedCallSigns,
+          eventParticipations: formattedParticipations,
+          manualParticipationCounts: formattedCounts
+        });
+
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Error loading data from Supabase:', error);
+        toast.error('Errore nel caricamento dei dati');
+      }
+    };
+
+    loadData();
   }, []);
-
-  const loadData = async () => {
-    try {
-      // Load callsigns
-      const callSigns = await mysqlClient.executeQuery<any>(
-        'SELECT * FROM callsigns'
-      );
-      
-      // Load event participations
-      const eventParticipations = await mysqlClient.executeQuery<any>(
-        'SELECT * FROM event_participations'
-      );
-      
-      // Load manual counts
-      const manualCounts = await mysqlClient.executeQuery<any>(
-        'SELECT * FROM manual_participation_counts'
-      );
-
-      // Format data as expected by the app
-      const formattedCallSigns = callSigns.map((cs: any) => ({
-        id: cs.id,
-        code: cs.code,
-        isActive: Boolean(cs.is_active)
-      }));
-
-      const formattedParticipations = eventParticipations.map((ep: any) => ({
-        id: ep.id,
-        callSignId: ep.callsign_id,
-        date: ep.date,
-        departureAirport: ep.departure_airport,
-        arrivalAirport: ep.arrival_airport,
-        isApproved: Boolean(ep.is_approved),
-        submittedAt: ep.submitted_at,
-        approvedAt: ep.approved_at
-      }));
-
-      const formattedCounts = manualCounts.map((mc: any) => ({
-        id: mc.id,
-        callSignId: mc.callsign_id,
-        count: mc.count,
-        updatedAt: mc.updated_at
-      }));
-
-      setDatabase({
-        callSigns: formattedCallSigns,
-        eventParticipations: formattedParticipations,
-        manualParticipationCounts: formattedCounts
-      });
-
-      setIsLoaded(true);
-    } catch (error) {
-      console.error('Error loading data from mock MySQL:', error);
-      toast.error('Error loading data');
-    }
-  };
 
   const login = async (password: string): Promise<boolean> => {
     if (password === "asxeventi10") {
@@ -136,17 +114,18 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addCallSign = async (code: string) => {
     try {
-      const id = uuidv4();
+      const { data, error } = await supabase
+        .from('callsigns')
+        .insert([{ code, is_active: true }])
+        .select()
+        .single();
       
-      await mysqlClient.executeQuery(
-        'INSERT INTO callsigns (id, code, is_active) VALUES (?, ?, ?)',
-        [id, code, 1]
-      );
+      if (error) throw error;
 
       const newCallSign: CallSign = {
-        id,
-        code,
-        isActive: true
+        id: data.id,
+        code: data.code,
+        isActive: data.is_active
       };
 
       setDatabase(prev => ({
@@ -163,10 +142,12 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateCallSign = async (id: string, code: string, isActive: boolean) => {
     try {
-      await mysqlClient.executeQuery(
-        'UPDATE callsigns SET code = ?, is_active = ? WHERE id = ?',
-        [code, isActive ? 1 : 0, id]
-      );
+      const { error } = await supabase
+        .from('callsigns')
+        .update({ code, is_active: isActive })
+        .eq('id', id);
+      
+      if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
@@ -184,12 +165,23 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteCallSign = async (id: string) => {
     try {
-      // Grazie alle foreign key constraints con ON DELETE CASCADE,
-      // MySQL eliminerà automaticamente i record correlati
-      await mysqlClient.executeQuery(
-        'DELETE FROM callsigns WHERE id = ?',
-        [id]
-      );
+      const { error: eventError } = await supabase
+        .from('event_participations')
+        .delete()
+        .eq('callsign_id', id);
+      if (eventError) throw eventError;
+
+      const { error: manualError } = await supabase
+        .from('manual_participation_counts')
+        .delete()
+        .eq('callsign_id', id);
+      if (manualError) throw manualError;
+
+      const { error } = await supabase
+        .from('callsigns')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
@@ -198,33 +190,37 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         manualParticipationCounts: prev.manualParticipationCounts.filter(mpc => mpc.callSignId !== id)
       }));
 
-      toast.success("Callsign eliminato con successo");
+      toast.success("Callsign eliminato con successo e tutte le partecipazioni associate sono state rimosse");
     } catch (error) {
-      console.error('Error deleting callsign:', error);
-      toast.error('Errore nell\'eliminazione del callsign');
+      console.error('Error deleting callsign and associated records:', error);
+      toast.error('Errore nell\'eliminazione del callsign e delle partecipazioni associate');
     }
   };
 
   const addEventParticipation = async (callSignId: string, date: string, departureAirport: string, arrivalAirport: string) => {
     try {
-      const id = uuidv4();
-      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('event_participations')
+        .insert([{
+          callsign_id: callSignId,
+          date,
+          departure_airport: departureAirport,
+          arrival_airport: arrivalAirport,
+          is_approved: false
+        }])
+        .select()
+        .single();
       
-      await mysqlClient.executeQuery(
-        `INSERT INTO event_participations 
-         (id, callsign_id, date, departure_airport, arrival_airport, is_approved, submitted_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [id, callSignId, date, departureAirport, arrivalAirport, 0, now]
-      );
+      if (error) throw error;
 
       const newParticipation: EventParticipation = {
-        id,
-        callSignId,
-        date,
-        departureAirport,
-        arrivalAirport,
-        isApproved: false,
-        submittedAt: now
+        id: data.id,
+        callSignId: data.callsign_id,
+        date: data.date,
+        departureAirport: data.departure_airport,
+        arrivalAirport: data.arrival_airport,
+        isApproved: data.is_approved,
+        submittedAt: data.submitted_at
       };
 
       setDatabase(prev => ({
@@ -243,10 +239,15 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       const now = new Date().toISOString();
       
-      await mysqlClient.executeQuery(
-        'UPDATE event_participations SET is_approved = ?, approved_at = ? WHERE id = ?',
-        [1, now, id]
-      );
+      const { error } = await supabase
+        .from('event_participations')
+        .update({ 
+          is_approved: true,
+          approved_at: now
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
@@ -266,36 +267,44 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const editEventParticipation = async (id: string, callSignId: string, date: string, departureAirport: string, arrivalAirport: string, isApproved: boolean) => {
     try {
-      const existingEvent = database.eventParticipations.find(ep => ep.id === id);
-      let approvedAt = null;
+      const updateData: any = {
+        callsign_id: callSignId,
+        date,
+        departure_airport: departureAirport,
+        arrival_airport: arrivalAirport,
+        is_approved: isApproved
+      };
       
+      const existingEvent = database.eventParticipations.find(ep => ep.id === id);
       if (isApproved && existingEvent && !existingEvent.isApproved) {
-        approvedAt = new Date().toISOString();
-      } else if (existingEvent && existingEvent.approvedAt) {
-        approvedAt = existingEvent.approvedAt;
+        updateData.approved_at = new Date().toISOString();
       }
       
-      await mysqlClient.executeQuery(
-        `UPDATE event_participations 
-         SET callsign_id = ?, date = ?, departure_airport = ?, arrival_airport = ?, 
-             is_approved = ?, approved_at = ? 
-         WHERE id = ?`,
-        [callSignId, date, departureAirport, arrivalAirport, isApproved ? 1 : 0, approvedAt, id]
-      );
+      const { error } = await supabase
+        .from('event_participations')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
         eventParticipations: prev.eventParticipations.map(ep => {
           if (ep.id === id) {
-            return { 
+            const updatedEp = { 
               ...ep, 
               callSignId, 
               date, 
               departureAirport, 
               arrivalAirport, 
-              isApproved,
-              approvedAt
+              isApproved
             };
+            
+            if (isApproved && !ep.isApproved) {
+              updatedEp.approvedAt = updateData.approved_at;
+            }
+            
+            return updatedEp;
           }
           return ep;
         })
@@ -310,10 +319,12 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteEventParticipation = async (id: string) => {
     try {
-      await mysqlClient.executeQuery(
-        'DELETE FROM event_participations WHERE id = ?',
-        [id]
-      );
+      const { error } = await supabase
+        .from('event_participations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
 
       setDatabase(prev => ({
         ...prev,
@@ -365,10 +376,12 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     try {
       if (existingManualCount) {
-        await mysqlClient.executeQuery(
-          'UPDATE manual_participation_counts SET count = ?, updated_at = ? WHERE callsign_id = ?',
-          [count, new Date().toISOString(), callSignId]
-        );
+        const { error } = await supabase
+          .from('manual_participation_counts')
+          .update({ count, updated_at: new Date().toISOString() })
+          .eq('callsign_id', callSignId);
+        
+        if (error) throw error;
 
         setDatabase(prev => ({
           ...prev,
@@ -377,23 +390,27 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
           )
         }));
       } else {
-        const id = uuidv4();
-        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('manual_participation_counts')
+          .insert([{ 
+            callsign_id: callSignId, 
+            count,
+            updated_at: new Date().toISOString() 
+          }])
+          .select()
+          .single();
         
-        await mysqlClient.executeQuery(
-          'INSERT INTO manual_participation_counts (id, callsign_id, count, updated_at) VALUES (?, ?, ?, ?)',
-          [id, callSignId, count, now]
-        );
+        if (error) throw error;
 
         setDatabase(prev => ({
           ...prev,
           manualParticipationCounts: [
             ...prev.manualParticipationCounts, 
             { 
-              id, 
+              id: data.id, 
               callSignId, 
               count,
-              updatedAt: now 
+              updatedAt: data.updated_at 
             }
           ]
         }));
@@ -413,10 +430,9 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     return manualCount ? manualCount.count : 0;
   };
 
-  const value: DatabaseContextType = {
+  const value = {
     database,
     isAdmin,
-    isConnected,
     login,
     logout,
     addCallSign,
@@ -433,8 +449,7 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     getApprovedParticipations,
     getCallSignParticipationCount,
     updateManualParticipationCount,
-    getManualParticipationCount,
-    initializeDatabase
+    getManualParticipationCount
   };
 
   return (

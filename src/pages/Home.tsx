@@ -1,5 +1,5 @@
 
-import { Plane, Users, Calendar, Shield, Database } from "lucide-react";
+import { Plane, Users, Calendar, Shield } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -98,11 +98,6 @@ const Home = () => {
             <Link to="/admin">
               <Button className="w-full bg-airline-blue hover:bg-blue-800">
                 <Shield className="mr-2 h-4 w-4" /> Accedi Area Admin
-              </Button>
-            </Link>
-            <Link to="/db-config">
-              <Button variant="outline" className="w-full">
-                <Database className="mr-2 h-4 w-4" /> Configura Database MySQL
               </Button>
             </Link>
           </CardContent>
