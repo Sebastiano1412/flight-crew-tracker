@@ -1,4 +1,3 @@
-
 import { Plane, Users, Calendar, Shield, Trophy } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,23 +5,18 @@ import { Link } from "react-router-dom";
 import { useDatabase } from "@/context/DatabaseContext";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 const Home = () => {
-  const { database, getCallSignCode, getCallSignParticipationCount } = useDatabase();
+  const {
+    database,
+    getCallSignCode,
+    getCallSignParticipationCount
+  } = useDatabase();
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Calculate total manual participations
-  const totalManualParticipations = database?.manualParticipationCounts?.reduce(
-    (sum, mpc) => sum + mpc.count, 0) || 0;
-    
+  const totalManualParticipations = database?.manualParticipationCounts?.reduce((sum, mpc) => sum + mpc.count, 0) || 0;
+
   // Add default values in case database is not yet loaded
   const totalPilots = database?.callSigns?.filter(cs => cs.isActive)?.length || 0;
   const totalEvents = database?.eventParticipations?.filter(ep => ep.isApproved)?.length || 0;
@@ -31,28 +25,20 @@ const Home = () => {
   const pendingApprovals = database?.eventParticipations?.filter(ep => !ep.isApproved)?.length || 0;
 
   // Get top 5 pilots by participation count
-  const topPilots = database?.callSigns
-    ?.filter(cs => cs.isActive)
-    ?.map(callSign => ({
-      id: callSign.id,
-      code: callSign.code,
-      participationCount: getCallSignParticipationCount(callSign.id)
-    }))
-    ?.sort((a, b) => b.participationCount - a.participationCount)
-    ?.slice(0, 5) || [];
-
+  const topPilots = database?.callSigns?.filter(cs => cs.isActive)?.map(callSign => ({
+    id: callSign.id,
+    code: callSign.code,
+    participationCount: getCallSignParticipationCount(callSign.id)
+  }))?.sort((a, b) => b.participationCount - a.participationCount)?.slice(0, 5) || [];
   useEffect(() => {
     if (database) {
       setIsLoading(false);
     }
   }, [database]);
-
   if (isLoading) {
     return <div className="text-center py-8">Caricamento...</div>;
   }
-
-  return (
-    <div className="space-y-8">
+  return <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-airline-blue mb-4">Report Eventi Aerosachs</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -79,7 +65,7 @@ const Home = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalReports}</div>
-            <CardDescription>Partecipazioni totali (approvate + manuali)</CardDescription>
+            <CardDescription>Partecipazioni totali</CardDescription>
           </CardContent>
         </Card>
 
@@ -133,30 +119,18 @@ const Home = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topPilots.map((pilot, index) => (
-                  <TableRow key={pilot.id}>
+                {topPilots.map((pilot, index) => <TableRow key={pilot.id}>
                     <TableCell>
-                      {index === 0 ? (
-                        <Badge className="bg-yellow-500">1°</Badge>
-                      ) : index === 1 ? (
-                        <Badge className="bg-gray-400">2°</Badge>
-                      ) : index === 2 ? (
-                        <Badge className="bg-amber-600">3°</Badge>
-                      ) : (
-                        `${index + 1}°`
-                      )}
+                      {index === 0 ? <Badge className="bg-yellow-500">1°</Badge> : index === 1 ? <Badge className="bg-gray-400">2°</Badge> : index === 2 ? <Badge className="bg-amber-600">3°</Badge> : `${index + 1}°`}
                     </TableCell>
                     <TableCell className="font-medium">{pilot.code}</TableCell>
                     <TableCell className="text-right">{pilot.participationCount}</TableCell>
-                  </TableRow>
-                ))}
-                {topPilots.length === 0 && (
-                  <TableRow>
+                  </TableRow>)}
+                {topPilots.length === 0 && <TableRow>
                     <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
                       Nessun dato di partecipazione disponibile
                     </TableCell>
-                  </TableRow>
-                )}
+                  </TableRow>}
               </TableBody>
             </Table>
             <div className="mt-4 text-right">
@@ -167,8 +141,6 @@ const Home = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
