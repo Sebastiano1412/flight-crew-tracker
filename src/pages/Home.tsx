@@ -19,9 +19,15 @@ const Home = () => {
   const { database, getCallSignCode, getCallSignParticipationCount } = useDatabase();
   const [isLoading, setIsLoading] = useState(true);
   
+  // Calculate total manual participations
+  const totalManualParticipations = database?.manualParticipationCounts?.reduce(
+    (sum, mpc) => sum + mpc.count, 0) || 0;
+    
   // Add default values in case database is not yet loaded
   const totalPilots = database?.callSigns?.filter(cs => cs.isActive)?.length || 0;
   const totalEvents = database?.eventParticipations?.filter(ep => ep.isApproved)?.length || 0;
+  // Include manual participations in total events count
+  const totalReports = totalEvents + totalManualParticipations;
   const pendingApprovals = database?.eventParticipations?.filter(ep => !ep.isApproved)?.length || 0;
 
   // Get top 5 pilots by participation count
@@ -72,8 +78,8 @@ const Home = () => {
             <Calendar className="h-6 w-6 text-airline-blue" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalEvents}</div>
-            <CardDescription>Partecipazioni approvate</CardDescription>
+            <div className="text-3xl font-bold">{totalReports}</div>
+            <CardDescription>Partecipazioni totali (approvate + manuali)</CardDescription>
           </CardContent>
         </Card>
 
