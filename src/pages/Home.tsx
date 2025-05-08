@@ -1,19 +1,39 @@
 
-import { Plane, Users, Calendar, Shield } from "lucide-react";
+import { Plane, Users, Calendar, Shield, Trophy } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useDatabase } from "@/context/DatabaseContext";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Home = () => {
-  const { database } = useDatabase();
+  const { database, getCallSignCode, getCallSignParticipationCount } = useDatabase();
   const [isLoading, setIsLoading] = useState(true);
   
   // Add default values in case database is not yet loaded
   const totalPilots = database?.callSigns?.filter(cs => cs.isActive)?.length || 0;
   const totalEvents = database?.eventParticipations?.filter(ep => ep.isApproved)?.length || 0;
   const pendingApprovals = database?.eventParticipations?.filter(ep => !ep.isApproved)?.length || 0;
+
+  // Get top 5 pilots by participation count
+  const topPilots = database?.callSigns
+    ?.filter(cs => cs.isActive)
+    ?.map(callSign => ({
+      id: callSign.id,
+      code: callSign.code,
+      participationCount: getCallSignParticipationCount(callSign.id)
+    }))
+    ?.sort((a, b) => b.participationCount - a.participationCount)
+    ?.slice(0, 5) || [];
 
   useEffect(() => {
     if (database) {
@@ -90,16 +110,54 @@ const Home = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Area Staff</CardTitle>
-            <CardDescription>Gestisci callsign e approvazioni eventi</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle>Classifica Piloti</CardTitle>
+              <CardDescription>Top 5 piloti per partecipazioni</CardDescription>
+            </div>
+            <Trophy className="h-6 w-6 text-yellow-500" />
           </CardHeader>
-          <CardContent className="flex flex-col space-y-4">
-            <Link to="/admin">
-              <Button className="w-full bg-airline-blue hover:bg-blue-800">
-                <Shield className="mr-2 h-4 w-4" /> Accedi Area Admin
-              </Button>
-            </Link>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">Posizione</TableHead>
+                  <TableHead>Callsign</TableHead>
+                  <TableHead className="text-right">Partecipazioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topPilots.map((pilot, index) => (
+                  <TableRow key={pilot.id}>
+                    <TableCell>
+                      {index === 0 ? (
+                        <Badge className="bg-yellow-500">1°</Badge>
+                      ) : index === 1 ? (
+                        <Badge className="bg-gray-400">2°</Badge>
+                      ) : index === 2 ? (
+                        <Badge className="bg-amber-600">3°</Badge>
+                      ) : (
+                        `${index + 1}°`
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{pilot.code}</TableCell>
+                    <TableCell className="text-right">{pilot.participationCount}</TableCell>
+                  </TableRow>
+                ))}
+                {topPilots.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                      Nessun dato di partecipazione disponibile
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <div className="mt-4 text-right">
+              <Link to="/statistics" className="text-airline-blue text-sm hover:underline">
+                Vedi classifica completa →
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
