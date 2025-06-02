@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { DatabaseConfig, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
+import { sendDiscordNotification } from '../utils/discordNotifications';
 
 interface DatabaseContextType {
   database: DatabaseConfig;
@@ -227,6 +228,10 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...prev,
         eventParticipations: [...prev.eventParticipations, newParticipation]
       }));
+
+      // Send Discord notification
+      const callSignCode = getCallSignCode(callSignId);
+      await sendDiscordNotification(callSignCode, date, departureAirport, arrivalAirport);
 
       toast.success("Partecipazione all'evento inviata per approvazione");
     } catch (error) {
