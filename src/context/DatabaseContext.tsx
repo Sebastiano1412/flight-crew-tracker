@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { DatabaseConfig, CallSign, EventParticipation } from '../config/database';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
-import { sendDiscordNotification } from '../utils/discordNotifications';
+import { sendDiscordNotification, sendMilestoneNotification } from '../utils/discordNotifications';
 
 interface DatabaseContextType {
   database: DatabaseConfig;
@@ -240,10 +240,29 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  // Define milestones
+  const milestones = [10, 20, 40, 60, 80, 100];
+
+  const checkMilestone = async (callSignId: string, newCount: number) => {
+    const callSignCode = getCallSignCode(callSignId);
+    
+    // Check if the new count hits a milestone
+    if (milestones.includes(newCount)) {
+      console.log(`Milestone reached: ${callSignCode} has ${newCount} participations`);
+      await sendMilestoneNotification(callSignCode, newCount);
+    }
+  };
+
   const approveEventParticipation = async (id: string, showToast = true) => {
     try {
       const now = new Date().toISOString();
       
+      // Get the participation before approval to get the callSignId
+      const participation = database.eventParticipations.find(ep => ep.id === id);
+      if (!participation) {
+        throw new Error("Participation not found");
+      }
+
       const { error } = await supabase
         .from('event_participations')
         .update({ 
@@ -260,6 +279,10 @@ export const DatabaseProvider: React.FC<{ children: ReactNode }> = ({ children }
           ep.id === id ? { ...ep, isApproved: true, approvedAt: now } : ep
         )
       }));
+
+      // Check for milestone after updating the database
+      const newCount = getCallSignParticipationCount(participation.callSignId) + 1;
+      await checkMilestone(participation.callSignId, newCount);
 
       if (showToast) {
         toast.success("Partecipazione all'evento approvata");
