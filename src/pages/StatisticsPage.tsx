@@ -32,6 +32,13 @@ const StatisticsPage = () => {
     return countB - countA;
   });
 
+  // Sort approved participations by approval date (most recent first)
+  const recentApprovedParticipations = [...approvedParticipations].sort((a, b) => {
+    const dateA = new Date(a.approvedAt || a.submittedAt).getTime();
+    const dateB = new Date(b.approvedAt || b.submittedAt).getTime();
+    return dateB - dateA; // Most recent first
+  }).slice(0, 5);
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -146,14 +153,14 @@ const StatisticsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {approvedParticipations.slice(0, 5).map((event) => (
+              {recentApprovedParticipations.map((event) => (
                 <TableRow key={event.id}>
                   <TableCell className="font-medium">{getCallSignCode(event.callSignId)}</TableCell>
                   <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
                   <TableCell>{event.departureAirport} → {event.arrivalAirport}</TableCell>
                 </TableRow>
               ))}
-              {approvedParticipations.length === 0 && (
+              {recentApprovedParticipations.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     Nessuna partecipazione approvata ancora
