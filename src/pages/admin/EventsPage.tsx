@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Pencil, Trash2, ListFilter, Plane } from "lucide-react";
+import { Calendar as CalendarIcon, Pencil, Trash2, ListFilter, Plane, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -95,6 +95,7 @@ const EventsPage = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<"all" | "approved" | "pending">("all");
+  const [searchCallsign, setSearchCallsign] = useState("");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -155,9 +156,16 @@ const EventsPage = () => {
 
   const filteredEvents = database.eventParticipations
     .filter(event => {
-      if (filterStatus === "approved") return event.isApproved;
-      if (filterStatus === "pending") return !event.isApproved;
-      return true;
+      // Filter by status
+      let matchesStatus = true;
+      if (filterStatus === "approved") matchesStatus = event.isApproved;
+      if (filterStatus === "pending") matchesStatus = !event.isApproved;
+      
+      // Filter by callsign search
+      const callsignCode = getCallSignCode(event.callSignId).toLowerCase();
+      const matchesSearch = searchCallsign === "" || callsignCode.includes(searchCallsign.toLowerCase());
+      
+      return matchesStatus && matchesSearch;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -187,19 +195,30 @@ const EventsPage = () => {
                 Tutte le segnalazioni di partecipazione a eventi nel sistema
               </CardDescription>
             </div>
-            <Select
-              value={filterStatus}
-              onValueChange={(value) => setFilterStatus(value as "all" | "approved" | "pending")}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtra per stato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i Record</SelectItem>
-                <SelectItem value="approved">Solo Approvati</SelectItem>
-                <SelectItem value="pending">Solo In Attesa</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Cerca per callsign..."
+                  value={searchCallsign}
+                  onChange={(e) => setSearchCallsign(e.target.value)}
+                  className="pl-9 w-[200px]"
+                />
+              </div>
+              <Select
+                value={filterStatus}
+                onValueChange={(value) => setFilterStatus(value as "all" | "approved" | "pending")}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtra per stato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i Record</SelectItem>
+                  <SelectItem value="approved">Solo Approvati</SelectItem>
+                  <SelectItem value="pending">Solo In Attesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
