@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -154,11 +153,13 @@ const EventsPage = () => {
     resetForm();
   }
 
-  const filteredEvents = database.eventParticipations.filter(event => {
-    if (filterStatus === "approved") return event.isApproved;
-    if (filterStatus === "pending") return !event.isApproved;
-    return true;
-  });
+  const filteredEvents = database.eventParticipations
+    .filter(event => {
+      if (filterStatus === "approved") return event.isApproved;
+      if (filterStatus === "pending") return !event.isApproved;
+      return true;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (!isAdmin) {
     return <Navigate to="/admin" />;
