@@ -1,5 +1,4 @@
-
-import { LineChart, Users, Plane } from "lucide-react";
+import { LineChart, Users, Plane, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,10 +10,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useDatabase } from "@/context/DatabaseContext";
+import { useState } from "react";
 
 const StatisticsPage = () => {
   const { database, getCallSignCode, getCallSignParticipationCount } = useDatabase();
+  const [searchTerm, setSearchTerm] = useState("");
+  
   const activeCallSigns = database.callSigns.filter(cs => cs.isActive);
   const approvedParticipations = database.eventParticipations.filter(ep => ep.isApproved);
   const pendingParticipations = database.eventParticipations.filter(ep => !ep.isApproved);
@@ -31,6 +34,11 @@ const StatisticsPage = () => {
     const countB = getCallSignParticipationCount(b.id);
     return countB - countA;
   });
+
+  // Filter callsigns based on search term
+  const filteredCallSigns = sortedCallSigns.filter(callSign => 
+    callSign.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Sort approved participations by approval date (most recent first)
   const recentApprovedParticipations = [...approvedParticipations].sort((a, b) => {
@@ -92,6 +100,15 @@ const StatisticsPage = () => {
           <CardDescription>
             Classifica dei piloti per numero di partecipazioni approvate agli eventi
           </CardDescription>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca callsign..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -104,19 +121,21 @@ const StatisticsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedCallSigns.map((callSign, index) => {
+              {filteredCallSigns.map((callSign, index) => {
                 const participationCount = getCallSignParticipationCount(callSign.id);
+                // Find original position in unfiltered list
+                const originalIndex = sortedCallSigns.findIndex(cs => cs.id === callSign.id);
                 return (
                   <TableRow key={callSign.id}>
                     <TableCell className="font-medium">
-                      {index === 0 ? (
+                      {originalIndex === 0 ? (
                         <Badge className="bg-yellow-500">1°</Badge>
-                      ) : index === 1 ? (
+                      ) : originalIndex === 1 ? (
                         <Badge className="bg-gray-400">2°</Badge>
-                      ) : index === 2 ? (
+                      ) : originalIndex === 2 ? (
                         <Badge className="bg-amber-600">3°</Badge>
                       ) : (
-                        `${index + 1}°`
+                        `${originalIndex + 1}°`
                       )}
                     </TableCell>
                     <TableCell>{callSign.code}</TableCell>
@@ -124,7 +143,14 @@ const StatisticsPage = () => {
                   </TableRow>
                 );
               })}
-              {sortedCallSigns.length === 0 && (
+              {filteredCallSigns.length === 0 && searchTerm && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    Nessun callsign trovato per "{searchTerm}"
+                  </TableCell>
+                </TableRow>
+              )}
+              {filteredCallSigns.length === 0 && !searchTerm && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     Nessun dato di partecipazione disponibile
