@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plane } from "lucide-react";
+import { Calendar as CalendarIcon, Plane, Check, ChevronsUpDown } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -18,18 +19,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useDatabase } from "@/context/DatabaseContext";
 
@@ -57,6 +59,7 @@ const ReportPage = () => {
   const navigate = useNavigate();
   const activeCallSigns = getActiveCallSigns().sort((a, b) => a.code.localeCompare(b.code));
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+  const [isCallsignPopoverOpen, setIsCallsignPopoverOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,28 +98,65 @@ const ReportPage = () => {
                 control={form.control}
                 name="callSignId"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Callsign</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona un callsign" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activeCallSigns.length > 0 ? (
-                          activeCallSigns.map(callSign => (
-                            <SelectItem key={callSign.id} value={callSign.id}>
-                              {callSign.code}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>
-                            Nessun callsign attivo disponibile
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={isCallsignPopoverOpen} onOpenChange={setIsCallsignPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? activeCallSigns.find(
+                                  (callSign) => callSign.id === field.value
+                                )?.code
+                              : "Seleziona un callsign"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Cerca callsign..." />
+                          <CommandList>
+                            <CommandEmpty>Nessun callsign trovato.</CommandEmpty>
+                            <CommandGroup>
+                              {activeCallSigns.length > 0 ? (
+                                activeCallSigns.map((callSign) => (
+                                  <CommandItem
+                                    value={callSign.code}
+                                    key={callSign.id}
+                                    onSelect={() => {
+                                      form.setValue("callSignId", callSign.id);
+                                      setIsCallsignPopoverOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        callSign.id === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {callSign.code}
+                                  </CommandItem>
+                                ))
+                              ) : (
+                                <CommandItem disabled>
+                                  Nessun callsign attivo disponibile
+                                </CommandItem>
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
