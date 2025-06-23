@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Pencil, Trash2, Plus, Tag, Hash } from "lucide-react";
+import { Pencil, Trash2, Plus, Tag, Hash, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -65,6 +66,7 @@ const CallSignsPage = () => {
   const { isAdmin, database, addCallSign, updateCallSign, deleteCallSign, getManualParticipationCount, updateManualParticipationCount } = useDatabase();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCallSign, setEditingCallSign] = useState<{ id: string; code: string; isActive: boolean; manualCount: number } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -115,6 +117,11 @@ const CallSignsPage = () => {
     setOpenDialog(false);
     resetForm();
   }
+
+  // Filter callsigns based on search term
+  const filteredCallSigns = database.callSigns.filter(callSign =>
+    callSign.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!isAdmin) {
     return <Navigate to="/admin" />;
@@ -223,10 +230,23 @@ const CallSignsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista Callsign</CardTitle>
-          <CardDescription>
-            Tutti i callsign registrati nel sistema
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Lista Callsign</CardTitle>
+              <CardDescription>
+                Tutti i callsign registrati nel sistema
+              </CardDescription>
+            </div>
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder="Cerca callsign..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-7 h-8 text-sm"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -241,7 +261,7 @@ const CallSignsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {database.callSigns
+              {filteredCallSigns
                 .sort((a, b) => a.code.localeCompare(b.code))
                 .map((callSign) => {
                 const approvedCount = database.eventParticipations.filter(
@@ -308,6 +328,13 @@ const CallSignsPage = () => {
                   </TableRow>
                 );
               })}
+              {filteredCallSigns.length === 0 && searchTerm && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    Nessun callsign trovato per "{searchTerm}"
+                  </TableCell>
+                </TableRow>
+              )}
               {database.callSigns.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
