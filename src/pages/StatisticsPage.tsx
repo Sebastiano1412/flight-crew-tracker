@@ -96,18 +96,22 @@ const StatisticsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Classifica Partecipazioni Piloti</CardTitle>
-          <CardDescription>
-            Classifica dei piloti per numero di partecipazioni approvate agli eventi
-          </CardDescription>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca callsign..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-xl">Classifica Partecipazioni Piloti</CardTitle>
+              <CardDescription>
+                Classifica dei piloti per numero di partecipazioni approvate agli eventi
+              </CardDescription>
+            </div>
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder="Cerca callsign..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-7 h-8 text-sm"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
