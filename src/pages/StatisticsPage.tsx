@@ -1,30 +1,24 @@
 import { LineChart, Users, Plane, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useDatabase } from "@/context/DatabaseContext";
 import { useState } from "react";
-
 const StatisticsPage = () => {
-  const { database, getCallSignCode, getCallSignParticipationCount } = useDatabase();
+  const {
+    database,
+    getCallSignCode,
+    getCallSignParticipationCount
+  } = useDatabase();
   const [searchTerm, setSearchTerm] = useState("");
-  
   const activeCallSigns = database.callSigns.filter(cs => cs.isActive);
   const approvedParticipations = database.eventParticipations.filter(ep => ep.isApproved);
   const pendingParticipations = database.eventParticipations.filter(ep => !ep.isApproved);
 
   // Calculate total manual participations
   const totalManualParticipations = database.manualParticipationCounts.reduce((sum, mpc) => sum + mpc.count, 0);
-  
+
   // Total approved participations including manual counts
   const totalParticipations = approvedParticipations.length + totalManualParticipations;
 
@@ -36,9 +30,7 @@ const StatisticsPage = () => {
   });
 
   // Filter callsigns based on search term
-  const filteredCallSigns = sortedCallSigns.filter(callSign => 
-    callSign.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCallSigns = sortedCallSigns.filter(callSign => callSign.code.toLowerCase().includes(searchTerm.toLowerCase()));
 
   // Sort approved participations by approval date (most recent first)
   const recentApprovedParticipations = [...approvedParticipations].sort((a, b) => {
@@ -46,9 +38,7 @@ const StatisticsPage = () => {
     const dateB = new Date(b.approvedAt || b.submittedAt).getTime();
     return dateB - dateA; // Most recent first
   }).slice(0, 5);
-
-  return (
-    <div className="space-y-8">
+  return <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-airline-blue mb-2 flex items-center justify-center">
           <LineChart className="mr-2 h-8 w-8" />
@@ -105,12 +95,7 @@ const StatisticsPage = () => {
             </div>
             <div className="relative w-64">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-              <Input
-                placeholder="Cerca callsign..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 h-8 text-sm"
-              />
+              <Input placeholder="Cerca callsign..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-7 h-8 text-sm" />
             </div>
           </div>
         </CardHeader>
@@ -126,41 +111,27 @@ const StatisticsPage = () => {
             </TableHeader>
             <TableBody>
               {filteredCallSigns.map((callSign, index) => {
-                const participationCount = getCallSignParticipationCount(callSign.id);
-                // Find original position in unfiltered list
-                const originalIndex = sortedCallSigns.findIndex(cs => cs.id === callSign.id);
-                return (
-                  <TableRow key={callSign.id}>
+              const participationCount = getCallSignParticipationCount(callSign.id);
+              // Find original position in unfiltered list
+              const originalIndex = sortedCallSigns.findIndex(cs => cs.id === callSign.id);
+              return <TableRow key={callSign.id}>
                     <TableCell className="font-medium">
-                      {originalIndex === 0 ? (
-                        <Badge className="bg-yellow-500">1°</Badge>
-                      ) : originalIndex === 1 ? (
-                        <Badge className="bg-gray-400">2°</Badge>
-                      ) : originalIndex === 2 ? (
-                        <Badge className="bg-amber-600">3°</Badge>
-                      ) : (
-                        `${originalIndex + 1}°`
-                      )}
+                      {originalIndex === 0 ? <Badge className="bg-yellow-500">1°</Badge> : originalIndex === 1 ? <Badge className="bg-gray-400">2°</Badge> : originalIndex === 2 ? <Badge className="bg-amber-600">3°</Badge> : `${originalIndex + 1}°`}
                     </TableCell>
                     <TableCell>{callSign.code}</TableCell>
                     <TableCell className="text-right">{participationCount}</TableCell>
-                  </TableRow>
-                );
-              })}
-              {filteredCallSigns.length === 0 && searchTerm && (
-                <TableRow>
+                  </TableRow>;
+            })}
+              {filteredCallSigns.length === 0 && searchTerm && <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     Nessun callsign trovato per "{searchTerm}"
                   </TableCell>
-                </TableRow>
-              )}
-              {filteredCallSigns.length === 0 && !searchTerm && (
-                <TableRow>
+                </TableRow>}
+              {filteredCallSigns.length === 0 && !searchTerm && <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     Nessun dato di partecipazione disponibile
                   </TableCell>
-                </TableRow>
-              )}
+                </TableRow>}
             </TableBody>
           </Table>
         </CardContent>
@@ -169,9 +140,7 @@ const StatisticsPage = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Partecipazioni Recenti Approvate</CardTitle>
-          <CardDescription>
-            Ultime partecipazioni agli eventi che sono state approvate
-          </CardDescription>
+          <CardDescription>Ultime partecipazioni approvate</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -183,26 +152,20 @@ const StatisticsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentApprovedParticipations.map((event) => (
-                <TableRow key={event.id}>
+              {recentApprovedParticipations.map(event => <TableRow key={event.id}>
                   <TableCell className="font-medium">{getCallSignCode(event.callSignId)}</TableCell>
                   <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
                   <TableCell>{event.departureAirport} → {event.arrivalAirport}</TableCell>
-                </TableRow>
-              ))}
-              {recentApprovedParticipations.length === 0 && (
-                <TableRow>
+                </TableRow>)}
+              {recentApprovedParticipations.length === 0 && <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     Nessuna partecipazione approvata ancora
                   </TableCell>
-                </TableRow>
-              )}
+                </TableRow>}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default StatisticsPage;
