@@ -71,7 +71,7 @@ const Home = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-bold">Approvazioni in Attesa</CardTitle>
+            <CardTitle className="text-xl font-bold">Report in Verifica</CardTitle>
             <Shield className="h-6 w-6 text-airline-blue" />
           </CardHeader>
           <CardContent>
