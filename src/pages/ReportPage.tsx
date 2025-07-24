@@ -49,7 +49,10 @@ const ReportPage = () => {
     }
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
-    addEventParticipation(values.callSignId, values.date.toISOString().split('T')[0], values.departureAirport.toUpperCase(), values.arrivalAirport.toUpperCase());
+    const localDateString = values.date.getFullYear() + '-' + 
+      String(values.date.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(values.date.getDate()).padStart(2, '0');
+    addEventParticipation(values.callSignId, localDateString, values.departureAirport.toUpperCase(), values.arrivalAirport.toUpperCase());
     navigate("/statistics");
   }
   return <div className="max-w-xl mx-auto space-y-6">
